@@ -1,17 +1,23 @@
 package api
 
 import (
+	"context"
 	"net/http"
-
 	"trainingApp/internal/exercise"
 )
 
 type Handler struct {
-	exercises *exercise.Store
+	exercises ExerciseStore
 }
 
-func New(exercises *exercise.Store) *Handler {
-	return &Handler{exercises: exercises}
+type ExerciseStore interface {
+	Create(ctx context.Context, e exercise.Exercise) (exercise.Exercise, error)
+	GetByID(ctx context.Context, id int64) (exercise.Exercise, error)
+	List(ctx context.Context, limit int) ([]exercise.Exercise, error)
+}
+
+func New(store ExerciseStore) *Handler {
+	return &Handler{exercises: store}
 }
 
 func (h *Handler) Routes() http.Handler {

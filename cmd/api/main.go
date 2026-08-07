@@ -12,7 +12,7 @@ import (
 	"time"
 	"trainingApp/internal/api"
 	"trainingApp/internal/config"
-	"trainingApp/internal/exercise"
+	"trainingApp/internal/postgres"
 )
 
 func main() {
@@ -27,7 +27,14 @@ func run() error {
 	if err != nil {
 		return err
 	}
-	h := api.New(exercise.NewStore())
+	db, err := postgres.Open(context.Background(), cfg.DSN)
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+	h := api.New(
+		postgres.NewExerciseRepo(db),
+	)
 	srv := &http.Server{
 		Addr:              ":" + cfg.Port,
 		Handler:           h.Routes(),
