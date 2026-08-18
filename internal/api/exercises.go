@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"log"
@@ -11,17 +12,32 @@ import (
 )
 
 const (
-	maxBodySize  = 1 << 20 // 1 MB
+	maxBodySize  = 1 << 20
 	defaultLimit = 20
 	maxLimit     = 100
 )
+
+type ExerciseHandler struct {
+	exercises ExerciseStore
+}
+
+func NewExerciseHandler(store ExerciseStore) *ExerciseHandler {
+	return &ExerciseHandler{exercises: store}
+
+}
+
+type ExerciseStore interface {
+	Create(ctx context.Context, e exercise.Exercise) (exercise.Exercise, error)
+	GetByID(ctx context.Context, id int64) (exercise.Exercise, error)
+	List(ctx context.Context, limit int) ([]exercise.Exercise, error)
+}
 
 type createExerciseRequest struct {
 	Name        string `json:"name"`
 	Description string `json:"description"`
 }
 
-func (h *Handler) createExercise(w http.ResponseWriter, r *http.Request) {
+func (h *ExerciseHandler) createExercise(w http.ResponseWriter, r *http.Request) {
 	r.Body = http.MaxBytesReader(w, r.Body, maxBodySize)
 
 	var req createExerciseRequest
@@ -32,15 +48,22 @@ func (h *Handler) createExercise(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := exercise.Validate(req.Name); err != nil {
+	userID, ok := userIDFro(r.Context())
+	if !ok {
+		writeError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+	exerciseObj := exercise.Exercise{
+		Name:        req.Name,
+		Description: req.Description,
+		UserID:      &userID,
+	}
+	if err := exerciseObj.Validate(); err != nil {
 		writeError(w, http.StatusUnprocessableEntity, err.Error())
 		return
 	}
 
-	created, err := h.exercises.Create(r.Context(), exercise.Exercise{
-		Name:        req.Name,
-		Description: req.Description,
-	})
+	created, err := h.exercises.Create(r.Context(), exerciseObj)
 	if err != nil {
 		log.Printf("create exercise: %v", err)
 		writeError(w, http.StatusInternalServerError, "internal error")
@@ -51,7 +74,7 @@ func (h *Handler) createExercise(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusCreated, created)
 }
 
-func (h *Handler) getExercise(w http.ResponseWriter, r *http.Request) {
+func (h *ExerciseHandler) getExercise(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
 		writeError(w, http.StatusBadRequest, "id must be a number")
@@ -72,7 +95,7 @@ func (h *Handler) getExercise(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, e)
 }
 
-func (h *Handler) listExercises(w http.ResponseWriter, r *http.Request) {
+func (h *ExerciseHandler) listExercises(w http.ResponseWriter, r *http.Request) {
 	limit := defaultLimit
 	if s := r.URL.Query().Get("limit"); s != "" {
 		n, err := strconv.Atoi(s)

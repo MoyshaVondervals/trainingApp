@@ -15,8 +15,8 @@ func NewExerciseRepo(db *sql.DB) *ExerciseRepo {
 }
 
 func (r *ExerciseRepo) Create(ctx context.Context, e exercise.Exercise) (exercise.Exercise, error) {
-	const q = `INSERT INTO exercises (name, description) VALUES ($1, $2) RETURNING id, created_at`
-	err := r.db.QueryRowContext(ctx, q, e.Name, e.Description).Scan(&e.ID, &e.CreatedAt)
+	const q = `INSERT INTO exercises (name, description, user_id) VALUES ($1, $2, $3) RETURNING id, created_at`
+	err := r.db.QueryRowContext(ctx, q, e.Name, e.Description, e.UserID).Scan(&e.ID, &e.CreatedAt)
 	if err != nil {
 		return exercise.Exercise{}, fmt.Errorf("create exercise: %w", err)
 	}
@@ -24,10 +24,10 @@ func (r *ExerciseRepo) Create(ctx context.Context, e exercise.Exercise) (exercis
 }
 
 func (r *ExerciseRepo) GetByID(ctx context.Context, id int64) (exercise.Exercise, error) {
-	const q = `SELECT id, name, description, created_at FROM exercises WHERE id = $1`
+	const q = `SELECT id, name, description, user_id, created_at FROM exercises WHERE id = $1`
 
 	var e exercise.Exercise
-	err := r.db.QueryRowContext(ctx, q, id).Scan(&e.ID, &e.Name, &e.Description, &e.CreatedAt)
+	err := r.db.QueryRowContext(ctx, q, id).Scan(&e.ID, &e.Name, &e.Description, &e.UserID, &e.CreatedAt)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return exercise.Exercise{}, exercise.ErrNotFound
@@ -47,7 +47,7 @@ func (r *ExerciseRepo) List(ctx context.Context, limit int) ([]exercise.Exercise
 	result := make([]exercise.Exercise, 0, limit)
 	for rows.Next() {
 		var e exercise.Exercise
-		if err := rows.Scan(&e.ID, &e.Name, &e.Description, &e.CreatedAt); err != nil {
+		if err := rows.Scan(&e.ID, &e.Name, &e.Description, &e.UserID, &e.CreatedAt); err != nil {
 			return nil, fmt.Errorf("listing exercises: %w", err)
 		}
 		result = append(result, e)

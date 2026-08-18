@@ -13,6 +13,8 @@ import (
 	"trainingApp/internal/api"
 	"trainingApp/internal/config"
 	"trainingApp/internal/postgres"
+
+	"github.com/joho/godotenv"
 )
 
 func main() {
@@ -23,6 +25,7 @@ func main() {
 }
 
 func run() error {
+	_ = godotenv.Load()
 	cfg, err := config.Load()
 	if err != nil {
 		return err
@@ -32,12 +35,13 @@ func run() error {
 		return err
 	}
 	defer db.Close()
-	h := api.New(
-		postgres.NewExerciseRepo(db),
+	h := api.Router(
+		api.NewExerciseHandler(postgres.NewExerciseRepo(db)),
+		api.NewUserHandler(postgres.NewUserRepo(db), cfg.JWTSecret, cfg.JWTTTL),
 	)
 	srv := &http.Server{
 		Addr:              ":" + cfg.Port,
-		Handler:           h.Routes(),
+		Handler:           h,
 		ReadTimeout:       cfg.ReadTimeout,
 		WriteTimeout:      cfg.WriteTimeout,
 		IdleTimeout:       cfg.IdleTimeout,
@@ -46,13 +50,13 @@ func run() error {
 
 	go func() {
 		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			log.Fatalf("listen: %v", err) // здесь Fatal уместен: приложение не поднялось
+			log.Fatalf("listen: %v", err)
 		}
 	}()
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
-	<-ctx.Done() // ждём сигнал
+	<-ctx.Done()
 
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()

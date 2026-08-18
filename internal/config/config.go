@@ -13,26 +13,35 @@ type Config struct {
 	ReadTimeout       time.Duration
 	WriteTimeout      time.Duration
 	IdleTimeout       time.Duration
+	JWTSecret         []byte
+	JWTTTL            time.Duration
 }
 
 func Load() (Config, error) {
 	cfg := Config{
-		Env:               env("ENV", "local"),
-		Port:              env("PORT", "8080"),
-		DSN:               env("DATABASE_URL", "postgres://user:secret@localhost:5433/training?sslmode=disable"),
-		ReadTimeout:       time.Second * 10,
+		Env:               os.Getenv("APP_ENV"),
+		Port:              os.Getenv("PORT"),
+		DSN:               os.Getenv("DATABASE_URL"),
 		ReadHeaderTimeout: time.Second * 5,
+		ReadTimeout:       time.Second * 10,
 		WriteTimeout:      time.Second * 15,
 		IdleTimeout:       time.Second * 60,
+		JWTSecret:         []byte(os.Getenv("JWT_SECRET")),
+		JWTTTL:            envDuration("JWT_TTL", 30*time.Minute),
 	}
 
 	return cfg, nil
 
 }
 
-func env(name, fallback string) string {
-	if v := os.Getenv(name); v != "" {
-		return v
+func envDuration(name string, fallback time.Duration) time.Duration {
+	v := os.Getenv(name)
+	if v == "" {
+		return fallback
 	}
-	return fallback
+	d, err := time.ParseDuration(v)
+	if err != nil {
+		return fallback
+	}
+	return d
 }

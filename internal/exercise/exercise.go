@@ -9,19 +9,28 @@ import (
 
 var ErrNotFound = errors.New("exercise not found")
 
+const (
+	maxExerciseNameLen         = 100
+	maxExerciseDescriptionName = 1000
+)
+
 type Exercise struct {
 	ID          int64     `json:"id"`
 	Name        string    `json:"name"`
 	Description string    `json:"description,omitempty"`
+	UserID      *int64    `json:"user_id"`
 	CreatedAt   time.Time `json:"created_at"`
 }
 
-func Validate(name string) error {
-	if strings.TrimSpace(name) == "" {
+func (e Exercise) Validate() error {
+	if strings.TrimSpace(e.Name) == "" {
 		return errors.New("name is required")
 	}
-	if utf8.RuneCountInString(name) > 100 {
+	if utf8.RuneCountInString(e.Name) > maxExerciseNameLen {
 		return errors.New("name must be at most 100 characters")
+	}
+	if utf8.RuneCountInString(e.Description) > maxExerciseDescriptionName {
+		return errors.New("description must be at most 1000 characters")
 	}
 	return nil
 }
