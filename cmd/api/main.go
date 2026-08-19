@@ -38,6 +38,7 @@ func run() error {
 	h := api.Router(
 		api.NewExerciseHandler(postgres.NewExerciseRepo(db)),
 		api.NewUserHandler(postgres.NewUserRepo(db), cfg.JWTSecret, cfg.JWTTTL),
+		api.NewWorkoutsHandler(postgres.NewWorkoutRepo(db)),
 	)
 	srv := &http.Server{
 		Addr:              ":" + cfg.Port,
