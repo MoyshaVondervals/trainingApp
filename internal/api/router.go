@@ -14,6 +14,8 @@ func Router(ex *ExerciseHandler, users *UserHandler) http.Handler {
 	protected := http.NewServeMux()
 	protected.HandleFunc("GET /api/v1/exercises", ex.listExercises)
 	protected.HandleFunc("POST /api/v1/exercises", ex.createExercise)
+	protected.HandleFunc("PATCH /api/v1/exercises/{id}", ex.updateExercise)
+	protected.HandleFunc("DELETE /api/v1/exercises/{id}", ex.deleteExercise)
 	protected.HandleFunc("GET /api/v1/exercises/{id}", ex.getExercise)
 
 	mux.Handle("/api/v1/", users.RequireAuth(protected))

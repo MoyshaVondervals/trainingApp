@@ -7,6 +7,7 @@ create table workouts(
     ended_at TIMESTAMPTZ DEFAULT NULL CHECK (ended_at IS NULL OR ended_at >= started_at),
     note VARCHAR(1000) NOT NULL DEFAULT ''
 );
+CREATE INDEX workouts_user_started_idx ON workouts(user_id, started_at DESC );
 
 
 -- +goose Down
