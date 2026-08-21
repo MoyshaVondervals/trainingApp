@@ -9,9 +9,6 @@ import (
 )
 
 var ErrNotFound = errors.New("user not found")
-var ErrAlreadyExists = errors.New("user already exists")
-var ErrWrongPassword = errors.New("wrong password")
-var ErrWrongEmail = errors.New("wrong email")
 
 const (
 	maxUserNameLen       = 100
