@@ -8,6 +8,7 @@ import (
 )
 
 var ErrNotFound = errors.New("exercise not found")
+var ErrMuscleGroupNotFound = errors.New("muscle group not found")
 
 const (
 	maxExerciseNameLen         = 100

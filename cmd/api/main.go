@@ -40,6 +40,7 @@ func run() error {
 		api.NewUserHandler(postgres.NewUserRepo(db), cfg.JWTSecret, cfg.JWTTTL),
 		api.NewWorkoutsHandler(postgres.NewWorkoutRepo(db)),
 		api.NewSetHandler(postgres.NewSetRepo(db)),
+		api.NewExerciseMuscleHandler(postgres.NewExerciseMusclesRepo(db)),
 	)
 	srv := &http.Server{
 		Addr:              ":" + cfg.Port,
