@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"log"
+	"log/slog"
 	"net/http"
 	"strconv"
 	"trainingApp/internal/exercise"
@@ -36,7 +36,7 @@ func (h *ExerciseMuscleHandler) list(w http.ResponseWriter, r *http.Request) {
 	}
 	muscles, err := h.exerciseMuscle.ListByExercise(r.Context(), userID, id)
 	if err != nil {
-		log.Printf("list exercise muscles %d: %v", id, err)
+		slog.Error("list exercise muscles", "exercise_id", id, "err", err)
 		writeError(w, http.StatusInternalServerError, "internal error")
 		return
 	}
@@ -75,13 +75,13 @@ func (h *ExerciseMuscleHandler) replace(w http.ResponseWriter, r *http.Request) 
 			writeError(w, http.StatusUnprocessableEntity, "unknown muscle_group_id")
 			return
 		}
-		log.Printf("replace exercise muscles %d: %v", id, err)
+		slog.Error("replace exercise muscles", "exercise_id", id, "err", err)
 		writeError(w, http.StatusInternalServerError, "internal error")
 		return
 	}
 	muscles, err := h.exerciseMuscle.ListByExercise(r.Context(), userID, id)
 	if err != nil {
-		log.Printf("list exercise muscles %d: %v", id, err)
+		slog.Error("list exercise muscles", "exercise_id", id, "err", err)
 		writeError(w, http.StatusInternalServerError, "internal error")
 		return
 	}

@@ -14,13 +14,13 @@ const (
 )
 
 type Set struct {
-	ID         int64     `json:"id"`
-	ExerciseID int64     `json:"exercise_id"`
-	WorkoutID  int64     `json:"workout_id"`
-	SetNumber  int64     `json:"set_number"`
-	Reps       int       `json:"reps"`
-	Weight     float32   `json:"weight"`
-	CreatedAt  time.Time `json:"created_at"`
+	ID         int64     `json:"id" db:"id"`
+	ExerciseID int64     `json:"exercise_id" db:"exercise_id"`
+	WorkoutID  int64     `json:"workout_id" db:"workout_id"`
+	SetNumber  int64     `json:"set_number" db:"set_number"`
+	Reps       int       `json:"reps" db:"reps"`
+	Weight     float32   `json:"weight" db:"weight_kg"`
+	CreatedAt  time.Time `json:"created_at" db:"created_at"`
 }
 
 func (s *Set) Validate() error {

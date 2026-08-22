@@ -23,6 +23,7 @@ func (h *UserHandler) RequireAuth(next http.Handler) http.Handler {
 			writeError(w, http.StatusUnauthorized, "invalid token")
 			return
 		}
+		rememberUserID(r.Context(), userID)
 		ctx := context.WithValue(r.Context(), userIDKey, userID)
 		next.ServeHTTP(w, r.WithContext(ctx))
 

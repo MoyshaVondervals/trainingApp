@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
 	"strconv"
 	"trainingApp/internal/set"
@@ -71,7 +71,7 @@ func (h *SetHandler) create(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusNotFound, "workout not found")
 			return
 		}
-		log.Printf("create set: %v", err)
+		slog.Error("create set", "err", err)
 		writeError(w, http.StatusInternalServerError, "internal error")
 		return
 	}
@@ -114,7 +114,7 @@ func (h *SetHandler) update(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusNotFound, set.ErrNotFound.Error())
 			return
 		}
-		log.Printf("update set: %v", err)
+		slog.Error("update set", "set_id", id, "err", err)
 		writeError(w, http.StatusInternalServerError, "internal error")
 		return
 	}
@@ -141,7 +141,7 @@ func (h *SetHandler) delete(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusNotFound, set.ErrNotFound.Error())
 			return
 		}
-		log.Printf("set handler: %v", err)
+		slog.Error("set handler", "set_id", id, "err", err)
 		writeError(w, http.StatusInternalServerError, "internal error")
 		return
 	}
@@ -167,7 +167,7 @@ func (h *SetHandler) getById(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusNotFound, set.ErrNotFound.Error())
 			return
 		}
-		log.Printf("set handler: %v", err)
+		slog.Error("set handler", "set_id", id, "err", err)
 		writeError(w, http.StatusInternalServerError, "internal error")
 		return
 	}
@@ -193,7 +193,7 @@ func (h *SetHandler) listByWorkout(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusNotFound, set.ErrNotFound.Error())
 			return
 		}
-		log.Printf("set handler: %v", err)
+		slog.Error("set handler", "set_id", id, "err", err)
 		writeError(w, http.StatusInternalServerError, "internal error")
 		return
 	}

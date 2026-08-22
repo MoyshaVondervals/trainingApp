@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
 	"strconv"
 	"time"
@@ -62,7 +62,7 @@ func (h *WorkoutsHandler) startTraining(w http.ResponseWriter, r *http.Request) 
 	}
 	created, err := h.workouts.Create(r.Context(), workoutObj)
 	if err != nil {
-		log.Printf("error creating workout: %v", err)
+		slog.Error("create workout", "err", err)
 		writeError(w, http.StatusInternalServerError, "error creating workout")
 		return
 	}
@@ -87,7 +87,7 @@ func (h *WorkoutsHandler) getTraining(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusNotFound, "workout not found")
 			return
 		}
-		log.Printf("error getting workout: %v", err)
+		slog.Error("get workout", "workout_id", id, "err", err)
 		writeError(w, http.StatusInternalServerError, "error getting workout")
 		return
 	}
@@ -111,7 +111,7 @@ func (h *WorkoutsHandler) listWorkout(w http.ResponseWriter, r *http.Request) {
 	}
 	e, err := h.workouts.List(r.Context(), userId, limit)
 	if err != nil {
-		log.Printf("error getting workouts: %v", err)
+		slog.Error("list workouts", "err", err)
 		writeError(w, http.StatusInternalServerError, "error getting workouts")
 		return
 	}
@@ -151,7 +151,7 @@ func (h *WorkoutsHandler) updateNote(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusNotFound, "workout not found")
 			return
 		}
-		log.Printf("error updating workout: %v", err)
+		slog.Error("update workout", "workout_id", id, "err", err)
 		writeError(w, http.StatusInternalServerError, "error updating workout")
 		return
 
@@ -177,7 +177,7 @@ func (h *WorkoutsHandler) finishTraining(w http.ResponseWriter, r *http.Request)
 			writeError(w, http.StatusNotFound, "workout not found")
 			return
 		}
-		log.Printf("error finishing workout: %v", err)
+		slog.Error("finish workout", "workout_id", id, "err", err)
 		writeError(w, http.StatusInternalServerError, "error finishing workout")
 		return
 	}
@@ -201,7 +201,7 @@ func (h *WorkoutsHandler) deleteTraining(w http.ResponseWriter, r *http.Request)
 			writeError(w, http.StatusNotFound, "workout not found")
 			return
 		}
-		log.Printf("error deleting workout: %v", err)
+		slog.Error("delete workout", "workout_id", id, "err", err)
 		writeError(w, http.StatusInternalServerError, "error deleting workout")
 		return
 	}

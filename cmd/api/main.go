@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
@@ -13,9 +13,15 @@ import (
 	"trainingApp/internal/api"
 	"trainingApp/internal/config"
 	"trainingApp/internal/postgres"
-
-	"github.com/joho/godotenv"
 )
+
+func newLogger(level slog.Level, format string) *slog.Logger {
+	opts := &slog.HandlerOptions{Level: level}
+	if format == "json" {
+		return slog.New(slog.NewJSONHandler(os.Stdout, opts))
+	}
+	return slog.New(slog.NewTextHandler(os.Stdout, opts))
+}
 
 func main() {
 	if err := run(); err != nil {
@@ -25,23 +31,26 @@ func main() {
 }
 
 func run() error {
-	_ = godotenv.Load()
 	cfg, err := config.Load()
 	if err != nil {
 		return err
 	}
+
+	logger := newLogger(cfg.SlogLevel(), cfg.LogFormat)
+	slog.SetDefault(logger)
 	db, err := postgres.Open(context.Background(), cfg.DSN)
 	if err != nil {
 		return err
 	}
 	defer db.Close()
-	h := api.Router(
+	router := api.Router(
 		api.NewExerciseHandler(postgres.NewExerciseRepo(db)),
-		api.NewUserHandler(postgres.NewUserRepo(db), cfg.JWTSecret, cfg.JWTTTL),
+		api.NewUserHandler(postgres.NewUserRepo(db), cfg.Secret(), cfg.JWTTTL),
 		api.NewWorkoutsHandler(postgres.NewWorkoutRepo(db)),
 		api.NewSetHandler(postgres.NewSetRepo(db)),
 		api.NewExerciseMuscleHandler(postgres.NewExerciseMusclesRepo(db)),
 	)
+	h := api.RequestLogger(logger)(router)
 	srv := &http.Server{
 		Addr:              ":" + cfg.Port,
 		Handler:           h,
@@ -53,7 +62,8 @@ func run() error {
 
 	go func() {
 		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			log.Fatalf("listen: %v", err)
+			slog.Error("listen", "err", err)
+			os.Exit(1)
 		}
 	}()
 
@@ -64,7 +74,7 @@ func run() error {
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	if err := srv.Shutdown(shutdownCtx); err != nil {
-		log.Printf("shutdown: %v", err)
+		slog.Error("shutdown", "err", err)
 	}
 
 	return nil

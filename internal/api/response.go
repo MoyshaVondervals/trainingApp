@@ -2,7 +2,7 @@ package api
 
 import (
 	"encoding/json"
-	"log"
+	"log/slog"
 	"net/http"
 )
 
@@ -18,7 +18,7 @@ func writeJSON(w http.ResponseWriter, status int, v any) {
 
 	buf, err := json.Marshal(v)
 	if err != nil {
-		log.Printf("marshal response: %v", err)
+		slog.Error("marshal response", "err", err)
 		http.Error(w, "internal error", http.StatusInternalServerError)
 		return
 	}
@@ -26,7 +26,7 @@ func writeJSON(w http.ResponseWriter, status int, v any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 	if _, err := w.Write(buf); err != nil {
-		log.Printf("write response: %v", err)
+		slog.Error("write response", "err", err)
 	}
 }
 

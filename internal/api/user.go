@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
 	"strconv"
 	"time"
@@ -124,7 +124,7 @@ func (h *UserHandler) loginUser(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusUnauthorized, "invalid email or password")
 			return
 		}
-		log.Printf("login: find user by email: %v", err)
+		slog.Error("login: find user by email", "err", err)
 		writeError(w, http.StatusInternalServerError, "internal error")
 		return
 	}

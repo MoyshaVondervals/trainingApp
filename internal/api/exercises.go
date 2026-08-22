@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"log"
+	"log/slog"
 	"net/http"
 	"strconv"
 	"trainingApp/internal/exercise"
@@ -55,7 +55,7 @@ func (h *ExerciseHandler) deleteExercise(w http.ResponseWriter, r *http.Request)
 			writeError(w, http.StatusNotFound, "exercise not found")
 			return
 		}
-		log.Printf("delete exercise %d: %v", id, err)
+		slog.Error("delete exercise", "exercise_id", id, "err", err)
 		writeError(w, http.StatusInternalServerError, "internal error")
 		return
 	}
@@ -94,7 +94,7 @@ func (h *ExerciseHandler) updateExercise(w http.ResponseWriter, r *http.Request)
 			writeError(w, http.StatusNotFound, "exercise not found")
 			return
 		}
-		log.Printf("update exercise %d: %v", id, err)
+		slog.Error("update exercise", "exercise_id", id, "err", err)
 		writeError(w, http.StatusInternalServerError, "internal error")
 		return
 	}
@@ -129,7 +129,7 @@ func (h *ExerciseHandler) createExercise(w http.ResponseWriter, r *http.Request)
 
 	created, err := h.exercises.Create(r.Context(), exerciseObj)
 	if err != nil {
-		log.Printf("create exercise: %v", err)
+		slog.Error("create exercise", "err", err)
 		writeError(w, http.StatusInternalServerError, "internal error")
 		return
 	}
@@ -156,7 +156,7 @@ func (h *ExerciseHandler) getExercise(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusNotFound, "exercise not found")
 			return
 		}
-		log.Printf("get exercise %d: %v", id, err)
+		slog.Error("get exercise", "exercise_id", id, "err", err)
 		writeError(w, http.StatusInternalServerError, "internal error")
 		return
 	}
@@ -181,7 +181,7 @@ func (h *ExerciseHandler) listExercises(w http.ResponseWriter, r *http.Request) 
 	}
 	res, err := h.exercises.List(r.Context(), userID, limit)
 	if err != nil {
-		log.Printf("list exercises: %v", err)
+		slog.Error("list exercises", "err", err)
 		writeError(w, http.StatusInternalServerError, "internal error")
 		return
 	}

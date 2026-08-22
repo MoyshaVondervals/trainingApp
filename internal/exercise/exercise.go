@@ -16,11 +16,11 @@ const (
 )
 
 type Exercise struct {
-	ID          int64     `json:"id"`
-	Name        string    `json:"name"`
-	Description string    `json:"description,omitempty"`
-	UserID      *int64    `json:"user_id"`
-	CreatedAt   time.Time `json:"created_at"`
+	ID          int64     `json:"id" db:"id"`
+	Name        string    `json:"name" db:"name"`
+	Description string    `json:"description,omitempty" db:"description"`
+	UserID      *int64    `json:"user_id" db:"user_id"`
+	CreatedAt   time.Time `json:"created_at" db:"created_at"`
 }
 
 func (e Exercise) Validate() error {

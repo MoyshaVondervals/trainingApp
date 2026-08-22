@@ -13,11 +13,11 @@ const (
 )
 
 type Workout struct {
-	ID        int64      `json:"id"`
-	UserID    int64      `json:"user_id"`
-	StartedAt time.Time  `json:"started_at"`
-	EndedAt   *time.Time `json:"ended_at"`
-	Note      string     `json:"note"`
+	ID        int64      `json:"id" db:"id"`
+	UserID    int64      `json:"user_id" db:"user_id"`
+	StartedAt time.Time  `json:"started_at" db:"started_at"`
+	EndedAt   *time.Time `json:"ended_at" db:"ended_at"`
+	Note      string     `json:"note" db:"note"`
 }
 
 func (e Workout) Validate() error {

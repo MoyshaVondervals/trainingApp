@@ -19,12 +19,12 @@ const (
 )
 
 type User struct {
-	ID         int64     `json:"id"`
-	Name       string    `json:"name"`
-	SecondName string    `json:"second_name"`
-	Email      string    `json:"email"`
-	Password   string    `json:"-"`
-	CreatedAt  time.Time `json:"created_at"`
+	ID         int64     `json:"id" db:"id"`
+	Name       string    `json:"name" db:"name"`
+	SecondName string    `json:"second_name" db:"second_name"`
+	Email      string    `json:"email" db:"email"`
+	Password   string    `json:"-" db:"password_hash"`
+	CreatedAt  time.Time `json:"created_at" db:"created_at"`
 }
 
 func (u *User) Validate() error {

@@ -13,8 +13,8 @@ const (
 const maxMusclesPerExercise = 20
 
 type Muscle struct {
-	MuscleGroupID int64  `json:"muscle_group_id"`
-	Role          string `json:"role"`
+	MuscleGroupID int64  `json:"muscle_group_id" db:"muscle_group_id"`
+	Role          string `json:"role" db:"role"`
 }
 
 func (m Muscle) Validate() error {
