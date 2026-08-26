@@ -4,7 +4,7 @@ import (
 	"net/http"
 )
 
-func Router(ex *ExerciseHandler, users *UserHandler, wo *WorkoutsHandler, s *SetHandler, em *ExerciseMuscleHandler) http.Handler {
+func Router(ex *ExerciseHandler, users *UserHandler, wo *WorkoutsHandler, s *SetHandler, em *ExerciseMuscleHandler, st *StatsHandler) http.Handler {
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("GET /health", health)
@@ -32,6 +32,8 @@ func Router(ex *ExerciseHandler, users *UserHandler, wo *WorkoutsHandler, s *Set
 	protected.HandleFunc("DELETE /api/v1/sets/{id}", s.delete)
 	protected.HandleFunc("GET /api/v1/sets/{id}", s.getById)
 	protected.HandleFunc("GET /api/v1/sets/byWorkout/{id}", s.listByWorkout)
+	protected.HandleFunc("GET /api/v1/stats", st.dashboard)
+
 	mux.Handle("/api/v1/", users.RequireAuth(protected))
 
 	return mux
