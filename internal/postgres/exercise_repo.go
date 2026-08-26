@@ -22,6 +22,9 @@ RETURNING id, name, description, user_id, created_at`
 	var created exercise.Exercise
 	err := r.db.GetContext(ctx, &created, q, e.Name, e.Description, e.UserID)
 	if err != nil {
+		if isUniqueViolation(err) {
+			return exercise.Exercise{}, exercise.ErrAlreadyExists
+		}
 		return exercise.Exercise{}, fmt.Errorf("create exercise: %w", err)
 	}
 	return created, nil
@@ -46,6 +49,9 @@ RETURNING id, name, description, user_id, created_at`
 	var updated exercise.Exercise
 	err := r.db.GetContext(ctx, &updated, q, e.Name, e.Description, e.ID, userID)
 	if err != nil {
+		if isUniqueViolation(err) {
+			return exercise.Exercise{}, exercise.ErrAlreadyExists
+		}
 		if errors.Is(err, sql.ErrNoRows) {
 			return exercise.Exercise{}, exercise.ErrNotFound
 		}

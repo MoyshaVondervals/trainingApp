@@ -44,7 +44,12 @@ func Load() (Config, error) {
 	return cfg, nil
 }
 
+const minSecretLen = 32
+
 func (c Config) validate() error {
+	if len(c.JWTSecret) < minSecretLen {
+		return fmt.Errorf("JWT_SECRET must be at least %d bytes, got %d", minSecretLen, len(c.JWTSecret))
+	}
 	switch c.LogFormat {
 	case "text", "json":
 	default:

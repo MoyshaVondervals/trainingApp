@@ -2,8 +2,10 @@ package api
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 	"net/http"
+	"runtime/debug"
 	"time"
 )
 
@@ -36,6 +38,28 @@ func (w *statusRecorder) Write(b []byte) (int, error) {
 	n, err := w.ResponseWriter.Write(b)
 	w.bytes += n
 	return n, err
+}
+
+func Recover(logger *slog.Logger) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			defer func() {
+				if rec := recover(); rec != nil {
+					if err, ok := rec.(error); ok && errors.Is(err, http.ErrAbortHandler) {
+						panic(rec)
+					}
+					logger.Error("panic",
+						"method", r.Method,
+						"path", r.URL.Path,
+						"panic", rec,
+						"stack", string(debug.Stack()),
+					)
+					writeError(w, http.StatusInternalServerError, "internal error")
+				}
+			}()
+			next.ServeHTTP(w, r)
+		})
+	}
 }
 
 func RequestLogger(logger *slog.Logger) func(http.Handler) http.Handler {

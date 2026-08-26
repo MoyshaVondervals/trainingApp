@@ -13,6 +13,7 @@ tags:
   - name: exercises
   - name: workouts
   - name: sets
+  - name: stats
 
 paths:
   /health:
@@ -406,6 +407,35 @@ paths:
         "401": { $ref: "#/components/responses/Unauthorized" }
         "500": { $ref: "#/components/responses/Internal" }
 
+  /api/v1/stats:
+    get:
+      tags: [stats]
+      summary: Сводная статистика нагрузки
+      description: >
+        Возвращает сводку за период, распределение объёма по мышечным группам и
+        персональные рекорды. Независимые выборки собираются параллельно.
+        Объём считается как сумма произведений повторов на вес; вклад мышечной
+        группы в роли secondary учитывается с коэффициентом 0.5.
+      parameters:
+        - name: from
+          in: query
+          description: Начало периода включительно. По умолчанию — 90 дней назад.
+          schema: { type: string, format: date-time }
+        - name: to
+          in: query
+          description: Конец периода не включая. По умолчанию — текущий момент.
+          schema: { type: string, format: date-time }
+      responses:
+        "200":
+          description: Статистика за период
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Dashboard" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "422": { $ref: "#/components/responses/Unprocessable" }
+        "500": { $ref: "#/components/responses/Internal" }
+
 components:
   securitySchemes:
     bearerAuth:
@@ -448,6 +478,60 @@ components:
           schema: { $ref: "#/components/schemas/Error" }
 
   schemas:
+    Dashboard:
+      type: object
+      properties:
+        period: { $ref: "#/components/schemas/Period" }
+        summary: { $ref: "#/components/schemas/Summary" }
+        muscles:
+          type: array
+          description: Мышечные группы, упорядоченные по убыванию объёма.
+          items: { $ref: "#/components/schemas/MuscleLoad" }
+        records:
+          type: array
+          description: Лучший подход по каждому упражнению, не более 20 записей.
+          items: { $ref: "#/components/schemas/Record" }
+
+    Period:
+      type: object
+      properties:
+        from: { type: string, format: date-time }
+        to: { type: string, format: date-time }
+
+    Summary:
+      type: object
+      properties:
+        workouts: { type: integer, format: int64 }
+        sets: { type: integer, format: int64 }
+        reps: { type: integer, format: int64 }
+        volume: { type: number, format: double }
+
+    MuscleLoad:
+      type: object
+      properties:
+        code: { type: string, description: Технический код мышечной группы. }
+        name: { type: string }
+        region: { type: string, description: Регион, объединяющий группу. }
+        volume:
+          type: number
+          format: double
+          description: Объём с учётом коэффициента роли.
+        reps: { type: integer, format: int64 }
+        sets: { type: integer, format: int64 }
+
+    Record:
+      type: object
+      properties:
+        exercise_id: { type: integer, format: int64 }
+        exercise_name: { type: string }
+        weight_kg:
+          type: number
+          format: double
+          nullable: true
+          description: null — подход с весом тела.
+        reps: { type: integer }
+        achieved_at: { type: string, format: date-time }
+
     Error:
       type: object
       properties:

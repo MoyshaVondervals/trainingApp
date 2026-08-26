@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"trainingApp/internal/exercise"
 
-	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jmoiron/sqlx"
 )
 
@@ -65,8 +64,7 @@ VALUES (:exercise_id, :muscle_group_id, :role)`
 		rows = append(rows, row{ExerciseID: exerciseID, MuscleGroupID: m.MuscleGroupID, Role: m.Role})
 	}
 	if _, err := tx.NamedExecContext(ctx, insertQ, rows); err != nil {
-		var pgErr *pgconn.PgError
-		if errors.As(err, &pgErr) && pgErr.Code == "23503" {
+		if isForeignKeyViolation(err) {
 			return exercise.ErrMuscleGroupNotFound
 		}
 		return fmt.Errorf("insert exercise_muscles: %w", err)

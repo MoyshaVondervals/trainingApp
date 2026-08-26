@@ -90,6 +90,10 @@ func (h *ExerciseHandler) updateExercise(w http.ResponseWriter, r *http.Request)
 	}
 	updated, err := h.exercises.UpdateByID(r.Context(), userID, exerciseObj)
 	if err != nil {
+		if errors.Is(err, exercise.ErrAlreadyExists) {
+			writeError(w, http.StatusConflict, "exercise with this name already exists")
+			return
+		}
 		if errors.Is(err, exercise.ErrNotFound) {
 			writeError(w, http.StatusNotFound, "exercise not found")
 			return
@@ -129,6 +133,10 @@ func (h *ExerciseHandler) createExercise(w http.ResponseWriter, r *http.Request)
 
 	created, err := h.exercises.Create(r.Context(), exerciseObj)
 	if err != nil {
+		if errors.Is(err, exercise.ErrAlreadyExists) {
+			writeError(w, http.StatusConflict, "exercise with this name already exists")
+			return
+		}
 		slog.Error("create exercise", "err", err)
 		writeError(w, http.StatusInternalServerError, "internal error")
 		return

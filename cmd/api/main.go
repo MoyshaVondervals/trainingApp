@@ -51,7 +51,7 @@ func run() error {
 		api.NewExerciseMuscleHandler(postgres.NewExerciseMusclesRepo(db)),
 		api.NewStatsHandler(postgres.NewStatsRepo(db)),
 	)
-	h := api.RequestLogger(logger)(router)
+	h := api.Recover(logger)(api.RequestLogger(logger)(router))
 	srv := &http.Server{
 		Addr:              ":" + cfg.Port,
 		Handler:           h,

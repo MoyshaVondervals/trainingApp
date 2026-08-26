@@ -95,7 +95,12 @@ func (h *UserHandler) registerUser(w http.ResponseWriter, r *http.Request) {
 	userObj.Password = string(hash)
 	createdUser, err := h.userStore.Create(r.Context(), userObj)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "failed to create user")
+		if errors.Is(err, user.ErrAlreadyExists) {
+			writeError(w, http.StatusConflict, "email already registered")
+			return
+		}
+		slog.Error("create user", "err", err)
+		writeError(w, http.StatusInternalServerError, "internal error")
 		return
 	}
 	w.Header().Set("Location", fmt.Sprintf("/api/users/%s", strconv.FormatInt(createdUser.ID, 10)))

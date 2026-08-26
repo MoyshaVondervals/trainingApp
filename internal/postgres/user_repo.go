@@ -24,6 +24,9 @@ RETURNING ` + userColumns
 	var created user.User
 	err := r.db.GetContext(ctx, &created, q, u.Name, u.SecondName, u.Email, u.Password)
 	if err != nil {
+		if isUniqueViolation(err) {
+			return user.User{}, user.ErrAlreadyExists
+		}
 		return user.User{}, fmt.Errorf("create user: %w", err)
 	}
 	return created, nil

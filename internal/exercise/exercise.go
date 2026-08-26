@@ -9,6 +9,7 @@ import (
 
 var ErrNotFound = errors.New("exercise not found")
 var ErrMuscleGroupNotFound = errors.New("muscle group not found")
+var ErrAlreadyExists = errors.New("exercise already exists")
 
 const (
 	maxExerciseNameLen         = 100
