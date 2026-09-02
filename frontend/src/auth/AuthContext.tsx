@@ -14,6 +14,7 @@ type AuthValue = {
 };
 
 const SESSION_KEY = "trainingapp.session";
+const REFRESH_MARGIN_MS = 5 * 60 * 1000;
 const AuthContext = createContext<AuthValue | null>(null);
 
 function loadSession(): Session | null {
@@ -42,13 +43,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUnauthorizedHandler(logout);
   }, [logout]);
 
+  const refresh = useCallback(async () => {
+    try {
+      const res = await api.refresh();
+      setToken(res.token);
+      setSession((prev) => {
+        if (!prev) return prev;
+        const next: Session = { ...prev, token: res.token, expiresAt: res.expires_at };
+        localStorage.setItem(SESSION_KEY, JSON.stringify(next));
+        return next;
+      });
+    } catch {
+      logout();
+    }
+  }, [logout]);
+
   useEffect(() => {
     if (!session) return;
-    const ms = new Date(session.expiresAt).getTime() - Date.now();
-    if (ms <= 0) { logout(); return; }
-    const t = setTimeout(logout, Math.min(ms, 2 ** 31 - 1));
+    const ms = new Date(session.expiresAt).getTime() - Date.now() - REFRESH_MARGIN_MS;
+    if (ms <= 0) { void refresh(); return; }
+    const t = setTimeout(() => void refresh(), Math.min(ms, 2 ** 31 - 1));
     return () => clearTimeout(t);
-  }, [session, logout]);
+  }, [session, refresh]);
+
+  useEffect(() => {
+    if (!session) return;
+    const onVisible = () => {
+      if (document.visibilityState !== "visible") return;
+      if (new Date(session.expiresAt).getTime() - Date.now() < REFRESH_MARGIN_MS) void refresh();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+  }, [session, refresh]);
 
   const login = useCallback(async (email: string, password: string) => {
     const res = await api.login({ email, password });

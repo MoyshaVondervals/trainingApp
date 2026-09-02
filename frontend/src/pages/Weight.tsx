@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { api } from "../api/client";
 import type { BodyWeight } from "../api/types";
 import { WeightChart } from "../components/WeightChart";
-import { Empty, ErrorBox, fmtNum, msg } from "../components/ui";
+import { Empty, ErrorBox, fmtNum, msg, parseDecimal } from "../components/ui";
 
 function isoDay(d: Date): string {
   return d.toISOString().slice(0, 10);
@@ -49,10 +49,15 @@ export function Weight() {
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
+    const kg = parseDecimal(value);
+    if (!Number.isFinite(kg) || kg < 20 || kg > 500) {
+      setError("Вес должен быть числом от 20 до 500");
+      return;
+    }
     setSaving(true);
     try {
       await api.createWeight({
-        weight_kg: Number(value),
+        weight_kg: kg,
         measured_on: day,
         note: note.trim(),
       });
@@ -112,7 +117,7 @@ export function Weight() {
       <form className="card row wrap end" onSubmit={submit}>
         <div style={{ flex: 1, minWidth: 120 }}>
           <label htmlFor="w-value">Вес, кг</label>
-          <input id="w-value" type="number" min={20} max={500} step="0.1" required
+          <input id="w-value" type="text" inputMode="decimal" required
                  value={value} onChange={(e) => setValue(e.target.value)} />
         </div>
         <div style={{ flex: 1, minWidth: 150 }}>

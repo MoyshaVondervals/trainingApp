@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { api } from "../api/client";
 import type { Exercise, Muscle, MuscleGroup, Set, Workout } from "../api/types";
 import { MuscleSummary } from "../components/MusclePicker";
-import { Empty, ErrorBox, fmtDate, fmtDuration, fmtNum, msg, useNow } from "../components/ui";
+import { Empty, ErrorBox, fmtDate, fmtDuration, fmtNum, msg, parseDecimal, useNow } from "../components/ui";
 
 export function WorkoutDetail() {
   const { id } = useParams();
@@ -78,6 +78,11 @@ export function WorkoutDetail() {
   async function addSet(e: React.FormEvent) {
     e.preventDefault();
     if (exerciseId === "") return;
+    const kg = weight.trim() === "" ? 0 : parseDecimal(weight);
+    if (!Number.isFinite(kg) || kg < 0 || kg > 350) {
+      setError("Вес должен быть числом от 0 до 350");
+      return;
+    }
     const used = sets.filter((s) => s.exercise_id === exerciseId);
     const nextNumber = used.length === 0
       ? 1
@@ -88,7 +93,7 @@ export function WorkoutDetail() {
         workout_id: workoutId,
         set_number: nextNumber,
         reps: Number(reps),
-        weight: weight === "" ? 0 : Number(weight),
+        weight: kg,
       });
       setSets(await api.setsByWorkout(workoutId));
       setError(null);
@@ -213,7 +218,7 @@ export function WorkoutDetail() {
           </div>
           <div style={{ flex: 1, minWidth: 140 }}>
             <label htmlFor="set-weight">Вес, кг — 0 свой вес</label>
-            <input id="set-weight" type="number" min={0} max={350} step="0.5" value={weight}
+            <input id="set-weight" type="text" inputMode="decimal" value={weight}
                    onChange={(e) => setWeight(e.target.value)} />
           </div>
           <button className="btn-primary" disabled={exercises.length === 0}>Добавить</button>

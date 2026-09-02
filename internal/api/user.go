@@ -109,6 +109,21 @@ func (h *UserHandler) registerUser(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
+func (h *UserHandler) refreshToken(w http.ResponseWriter, r *http.Request) {
+	userID, ok := userIDFrom(r.Context())
+	if !ok {
+		writeError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+	token, expiresAt, err := auth.NewToken(h.secret, userID, h.tokenTTL)
+	if err != nil {
+		slog.Error("refresh token", "user_id", userID, "err", err)
+		writeError(w, http.StatusInternalServerError, "failed to create token")
+		return
+	}
+	writeJSON(w, http.StatusOK, loginResponse{token, expiresAt})
+}
+
 func (h *UserHandler) loginUser(w http.ResponseWriter, r *http.Request) {
 	r.Body = http.MaxBytesReader(w, r.Body, maxBodySize)
 	var req loginRequest
@@ -126,7 +141,7 @@ func (h *UserHandler) loginUser(w http.ResponseWriter, r *http.Request) {
 	userObj, err := h.userStore.FindByEmail(r.Context(), req.Email)
 	if err != nil {
 		if errors.Is(err, user.ErrNotFound) {
-			writeError(w, http.StatusUnauthorized, "invalid email or password")
+			writeError(w, http.StatusUnauthorized, "no account with this email")
 			return
 		}
 		slog.Error("login: find user by email", "err", err)
@@ -134,7 +149,7 @@ func (h *UserHandler) loginUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := bcrypt.CompareHashAndPassword([]byte(userObj.Password), []byte(req.Password)); err != nil {
-		writeError(w, http.StatusUnauthorized, "invalid email or password")
+		writeError(w, http.StatusUnauthorized, "invalid password")
 		return
 	}
 	token, expiresAt, err := auth.NewToken(h.secret, userObj.ID, h.tokenTTL)

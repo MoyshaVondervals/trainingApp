@@ -20,6 +20,12 @@ export class ApiError extends Error {
   }
 }
 
+const serverMessages: Record<string, string> = {
+  "no account with this email": "Аккаунта с таким email нет",
+  "invalid password": "Неверный пароль",
+  "email already registered": "Этот email уже зарегистрирован",
+};
+
 let onUnauthorized: () => void = () => {};
 export function setUnauthorizedHandler(fn: () => void) {
   onUnauthorized = fn;
@@ -37,7 +43,8 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
     body: body === undefined ? undefined : JSON.stringify(body),
   });
 
-  if (res.status === 401) {
+  const isAuthAttempt = path === "/api/v1/auth/login" || path === "/api/v1/auth/register";
+  if (res.status === 401 && !isAuthAttempt) {
     onUnauthorized();
     throw new ApiError(401, "Сессия истекла, войдите заново");
   }
@@ -48,7 +55,7 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
 
   if (!res.ok) {
     const msg = data && typeof data.error === "string" ? data.error : `Ошибка ${res.status}`;
-    throw new ApiError(res.status, msg);
+    throw new ApiError(res.status, serverMessages[msg] ?? msg);
   }
   return data as T;
 }
@@ -58,6 +65,7 @@ export const api = {
     request<User>("POST", "/api/v1/auth/register", b),
   login: (b: { email: string; password: string }) =>
     request<LoginResponse>("POST", "/api/v1/auth/login", b),
+  refresh: () => request<LoginResponse>("POST", "/api/v1/auth/refresh"),
 
   exercises: (limit = 100) => request<Exercise[]>("GET", `/api/v1/exercises?limit=${limit}`),
   exercise: (id: number) => request<Exercise>("GET", `/api/v1/exercises/${id}`),

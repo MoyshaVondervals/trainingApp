@@ -22,6 +22,10 @@ export function fmtNum(n: number): string {
   return new Intl.NumberFormat("ru-RU", { maximumFractionDigits: 1 }).format(n);
 }
 
+export function parseDecimal(value: string): number {
+  return Number(value.replace(",", ".").trim());
+}
+
 export function msg(e: unknown): string {
   return e instanceof Error ? e.message : "Неизвестная ошибка";
 }

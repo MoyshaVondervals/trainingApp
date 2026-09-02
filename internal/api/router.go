@@ -12,6 +12,8 @@ func Router(ex *ExerciseHandler, users *UserHandler, wo *WorkoutsHandler, s *Set
 	mux.HandleFunc("POST /api/v1/auth/login", users.loginUser)
 
 	protected := http.NewServeMux()
+	protected.HandleFunc("POST /api/v1/auth/refresh", users.refreshToken)
+
 	protected.HandleFunc("GET /api/v1/exercises", ex.listExercises)
 	protected.HandleFunc("POST /api/v1/exercises", ex.createExercise)
 	protected.HandleFunc("PATCH /api/v1/exercises/{id}", ex.updateExercise)
