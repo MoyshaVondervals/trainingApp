@@ -3,7 +3,6 @@ import type { Muscle, MuscleGroup } from "../api/types";
 
 type Region = { code: string; name: string; groups: MuscleGroup[] };
 
-/** Группирует плоский справочник по регионам, сохраняя порядок каталога. */
 export function useRegions(catalog: MuscleGroup[]): Region[] {
   return useMemo(() => {
     const byRegion = new Map<string, Region>();
@@ -25,15 +24,10 @@ type PickerProps = {
   onChange: (next: Muscle[]) => void;
 };
 
-/**
- * Выбор мышц в два шага: сначала разделы, затем группы внутри выбранных.
- * Ровно одна группа обязана быть primary — это требование API.
- */
 export function MusclePicker({ catalog, value, onChange }: PickerProps) {
   const regions = useRegions(catalog);
   const chosen = useMemo(() => new Map(value.map((m) => [m.muscle_group_id, m.role])), [value]);
 
-  // Разделы уже выбранных групп раскрыты изначально — иначе правка вслепую.
   const [openRegions, setOpenRegions] = useState<string[]>(() => {
     const ids = new Set(value.map((m) => m.muscle_group_id));
     return catalog.filter((g) => ids.has(g.id)).map((g) => g.region_code);
@@ -50,7 +44,6 @@ export function MusclePicker({ catalog, value, onChange }: PickerProps) {
       onChange(value.filter((m) => m.muscle_group_id !== id));
       return;
     }
-    // Первая выбранная группа становится primary, остальные — secondary.
     const role: Muscle["role"] = value.some((m) => m.role === "primary") ? "secondary" : "primary";
     onChange([...value, { muscle_group_id: id, role }]);
   }
@@ -122,7 +115,6 @@ export function MusclePicker({ catalog, value, onChange }: PickerProps) {
   );
 }
 
-/** Только чтение: мышцы упражнения, сгруппированные по разделам. */
 export function MuscleSummary({ catalog, muscles }: { catalog: MuscleGroup[]; muscles: Muscle[] }) {
   const byId = useMemo(() => new Map(catalog.map((g) => [g.id, g])), [catalog]);
 
@@ -135,7 +127,6 @@ export function MuscleSummary({ catalog, muscles }: { catalog: MuscleGroup[]; mu
       entry.items.push({ name: g?.name ?? `группа #${m.muscle_group_id}`, role: m.role });
       map.set(key, entry);
     }
-    // primary первыми — их и хочется видеть сразу.
     for (const e of map.values()) {
       e.items.sort((a, b) => (a.role === b.role ? 0 : a.role === "primary" ? -1 : 1));
     }

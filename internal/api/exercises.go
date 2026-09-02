@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"strconv"
@@ -172,15 +173,23 @@ func (h *ExerciseHandler) getExercise(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, e)
 }
 
+func parseLimit(r *http.Request) (int, error) {
+	s := r.URL.Query().Get("limit")
+	if s == "" {
+		return defaultLimit, nil
+	}
+	n, err := strconv.Atoi(s)
+	if err != nil || n < 1 || n > maxLimit {
+		return 0, fmt.Errorf("limit must be between 1 and %d", maxLimit)
+	}
+	return n, nil
+}
+
 func (h *ExerciseHandler) listExercises(w http.ResponseWriter, r *http.Request) {
-	limit := defaultLimit
-	if s := r.URL.Query().Get("limit"); s != "" {
-		n, err := strconv.Atoi(s)
-		if err != nil || n < 1 || n > maxLimit {
-			writeError(w, http.StatusBadRequest, "limit must be between 1 and 100")
-			return
-		}
-		limit = n
+	limit, err := parseLimit(r)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err.Error())
+		return
 	}
 	userID, ok := userIDFrom(r.Context())
 	if !ok {

@@ -1,0 +1,22 @@
+# Секреты и локальная конфигурация
+.env
+.env.local
+*.pem
+*.key
+
+# Сборка
+/bin/
+/api
+trainingApp
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# ОС
+.DS_Store
+
+# Тесты и покрытие
+*.test
+coverage.out

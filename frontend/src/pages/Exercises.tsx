@@ -50,7 +50,6 @@ export function Exercises() {
       const saved = editing
         ? await api.updateExercise(editing.id, form)
         : await api.createExercise(form);
-      // Набор мышц заменяется отдельным запросом — в API он живёт своим ресурсом.
       if (muscles.length > 0) {
         const fresh = await api.setMuscles(saved.id, muscles);
         setMusclesByExercise((prev) => ({ ...prev, [saved.id]: fresh }));

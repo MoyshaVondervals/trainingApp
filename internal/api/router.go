@@ -4,7 +4,7 @@ import (
 	"net/http"
 )
 
-func Router(ex *ExerciseHandler, users *UserHandler, wo *WorkoutsHandler, s *SetHandler, em *ExerciseMuscleHandler, st *StatsHandler) http.Handler {
+func Router(ex *ExerciseHandler, users *UserHandler, wo *WorkoutsHandler, s *SetHandler, em *ExerciseMuscleHandler, st *StatsHandler, bw *WeightHandler) http.Handler {
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("GET /health", health)
@@ -19,6 +19,8 @@ func Router(ex *ExerciseHandler, users *UserHandler, wo *WorkoutsHandler, s *Set
 	protected.HandleFunc("GET /api/v1/exercises/{id}", ex.getExercise)
 	protected.HandleFunc("GET /api/v1/exercises/{id}/muscles", em.list)
 	protected.HandleFunc("PUT /api/v1/exercises/{id}/muscles", em.replace)
+	protected.HandleFunc("GET /api/v1/muscle-groups", em.listGroups)
+	protected.HandleFunc("GET /api/v1/muscle-groups/{code}/exercises", em.listExercisesByGroup)
 
 	protected.HandleFunc("POST /api/v1/workouts", wo.startTraining)
 	protected.HandleFunc("GET /api/v1/workouts/{id}", wo.getTraining)
@@ -33,6 +35,10 @@ func Router(ex *ExerciseHandler, users *UserHandler, wo *WorkoutsHandler, s *Set
 	protected.HandleFunc("GET /api/v1/sets/{id}", s.getById)
 	protected.HandleFunc("GET /api/v1/sets/byWorkout/{id}", s.listByWorkout)
 	protected.HandleFunc("GET /api/v1/stats", st.dashboard)
+
+	protected.HandleFunc("POST /api/v1/weights", bw.create)
+	protected.HandleFunc("GET /api/v1/weights", bw.list)
+	protected.HandleFunc("DELETE /api/v1/weights/{id}", bw.delete)
 
 	mux.Handle("/api/v1/", users.RequireAuth(protected))
 

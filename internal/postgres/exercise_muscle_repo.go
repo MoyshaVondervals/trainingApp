@@ -72,3 +72,38 @@ VALUES (:exercise_id, :muscle_group_id, :role)`
 
 	return tx.Commit()
 }
+
+func (r *ExerciseMusclesRepo) ListExercisesByGroup(ctx context.Context, userID int64, code string, limit int) ([]exercise.WithRole, error) {
+	const groupQ = `SELECT id FROM muscle_groups WHERE code = $1`
+	var groupID int64
+	if err := r.db.GetContext(ctx, &groupID, groupQ, code); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, exercise.ErrMuscleGroupNotFound
+		}
+		return nil, fmt.Errorf("find muscle group: %w", err)
+	}
+
+	const q = `SELECT e.id, e.name, e.description, e.user_id, e.created_at, em.role
+FROM exercise_muscles em
+JOIN exercises e ON e.id = em.exercise_id
+WHERE em.muscle_group_id = $1 AND (e.user_id IS NULL OR e.user_id = $2)
+ORDER BY em.role, e.name
+LIMIT $3`
+	found := make([]exercise.WithRole, 0, limit)
+	if err := r.db.SelectContext(ctx, &found, q, groupID, userID, limit); err != nil {
+		return nil, fmt.Errorf("select exercises by muscle group: %w", err)
+	}
+	return found, nil
+}
+
+func (r *ExerciseMusclesRepo) ListGroups(ctx context.Context) ([]exercise.Group, error) {
+	const q = `SELECT mg.id, mg.code, mg.name, reg.code AS region_code, reg.name AS region_name
+FROM muscle_groups mg
+JOIN muscle_regions reg ON reg.id = mg.parent_id
+ORDER BY reg.sort_order, mg.sort_order`
+	groups := make([]exercise.Group, 0, 64)
+	if err := r.db.SelectContext(ctx, &groups, q); err != nil {
+		return nil, fmt.Errorf("select muscle_groups: %w", err)
+	}
+	return groups, nil
+}

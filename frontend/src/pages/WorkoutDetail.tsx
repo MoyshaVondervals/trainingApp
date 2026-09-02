@@ -23,11 +23,9 @@ export function WorkoutDetail() {
 
   const [catalog, setCatalog] = useState<MuscleGroup[]>([]);
   const [openSet, setOpenSet] = useState<number | null>(null);
-  // Мышцы упражнения тянутся по клику и кешируются: одно упражнение — один запрос.
   const [musclesByExercise, setMusclesByExercise] = useState<Record<number, Muscle[]>>({});
   const [musclesError, setMusclesError] = useState<string | null>(null);
 
-  // Идущая тренировка обновляет длительность раз в полминуты.
   const now = useNow(workout !== null && workout.ended_at === null);
 
   const load = useCallback(async () => {
@@ -59,7 +57,6 @@ export function WorkoutDetail() {
     [exercises],
   );
 
-  // Подходы группируются по упражнению — так их и вводят в зале.
   const groups = useMemo(() => {
     const byExercise = new Map<number, Set[]>();
     for (const s of sets) {
@@ -91,7 +88,6 @@ export function WorkoutDetail() {
         workout_id: workoutId,
         set_number: nextNumber,
         reps: Number(reps),
-        // Пустое поле и 0 значат одно и то же: работа собственным весом.
         weight: weight === "" ? 0 : Number(weight),
       });
       setSets(await api.setsByWorkout(workoutId));

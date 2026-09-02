@@ -4,24 +4,12 @@ services:
     ports: !reset []
 
   api:
-    build: .
     environment:
-      APP_ENV: prod
-      PORT: "8080"
-      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable&connect_timeout=5
-      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
-      JWT_TTL: ${JWT_TTL:-30m}
-      LOG_LEVEL: ${LOG_LEVEL:-info}
+      APP_ENV: production
       LOG_FORMAT: json
-    depends_on:
-      postgres:
-        condition: service_healthy
-    restart: unless-stopped
 
   frontend:
     ports: !reset []
-    extra_hosts: !reset []
-    restart: unless-stopped
 
   caddy:
     image: caddy:2-alpine
@@ -29,12 +17,16 @@ services:
       - "80:80"
       - "443:443"
     environment:
-      DOMAIN: ${DOMAIN:?DOMAIN is required}
+      DOMAIN: ${DOMAIN:?DOMAIN не задан}
     volumes:
       - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
       - caddy_config:/config
-    depends_on: [frontend, api]
+    depends_on:
+      api:
+        condition: service_healthy
+      frontend:
+        condition: service_started
     restart: unless-stopped
 
 volumes:

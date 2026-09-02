@@ -1,24 +1,54 @@
+
+x-db-dsn: &db-dsn
+  postgres://${POSTGRES_USER:?POSTGRES_USER не задан}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD не задан}@postgres:5432/${POSTGRES_DB:?POSTGRES_DB не задан}?sslmode=disable&connect_timeout=5
+
 services:
   postgres:
     image: postgres:17-alpine
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-user}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
-      POSTGRES_DB: ${POSTGRES_DB:-training}
-    # Порт виден только с localhost: без явного адреса Docker биндится на 0.0.0.0
-    # и открывает базу в интернет.
-    ports: ["127.0.0.1:5433:5432"]
+      POSTGRES_USER: ${POSTGRES_USER:?}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?}
+      POSTGRES_DB: ${POSTGRES_DB:?}
+    ports: ["5433:5432"]
     volumes: [pgdata:/var/lib/postgresql/data]
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-user}"]
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
       interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  migrate:
+    build:
+      context: .
+      target: migrate
+    environment:
+      GOOSE_DBSTRING: *db-dsn
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+
+  api:
+    build:
+      context: .
+      target: api
+    env_file: [.env]
+    environment:
+      DATABASE_URL: *db-dsn
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     restart: unless-stopped
 
   frontend:
     build: ./frontend
-    ports: ["127.0.0.1:3000:80"]
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
+    ports: ["3000:80"]
+    depends_on:
+      api:
+        condition: service_healthy
     restart: unless-stopped
 
 volumes:

@@ -1,7 +1,7 @@
 import type {
-  Dashboard, Exercise, LoginResponse, Muscle, MuscleGroup, Set, User, Workout,
+  BodyWeight, Dashboard, Exercise, ExerciseWithRole, LoginResponse, Muscle, MuscleGroup,
+  Set, User, Workout,
 } from "./types";
-import { FALLBACK_MUSCLE_GROUPS } from "./muscleCatalog";
 
 const TOKEN_KEY = "trainingapp.token";
 
@@ -20,7 +20,6 @@ export class ApiError extends Error {
   }
 }
 
-/** Вызывается клиентом при 401, чтобы AuthContext сбросил сессию. */
 let onUnauthorized: () => void = () => {};
 export function setUnauthorizedHandler(fn: () => void) {
   onUnauthorized = fn;
@@ -70,7 +69,9 @@ export const api = {
   muscles: (id: number) => request<Muscle[]>("GET", `/api/v1/exercises/${id}/muscles`),
   setMuscles: (id: number, b: Muscle[]) =>
     request<Muscle[]>("PUT", `/api/v1/exercises/${id}/muscles`, b),
-  muscleGroups: muscleGroups,
+  muscleGroups: () => request<MuscleGroup[]>("GET", "/api/v1/muscle-groups"),
+  exercisesByMuscle: (code: string, limit = 20) =>
+    request<ExerciseWithRole[]>("GET", `/api/v1/muscle-groups/${encodeURIComponent(code)}/exercises?limit=${limit}`),
 
   workouts: (limit = 100) => request<Workout[]>("GET", `/api/v1/workouts?limit=${limit}`),
   workout: (id: number) => request<Workout>("GET", `/api/v1/workouts/${id}`),
@@ -89,6 +90,16 @@ export const api = {
     request<Set>("PATCH", `/api/v1/sets/${id}`, b),
   deleteSet: (id: number) => request<void>("DELETE", `/api/v1/sets/${id}`),
 
+  weights: (from?: string, to?: string, limit = 100) => {
+    const q = new URLSearchParams({ limit: String(limit) });
+    if (from) q.set("from", from);
+    if (to) q.set("to", to);
+    return request<BodyWeight[]>("GET", `/api/v1/weights?${q.toString()}`);
+  },
+  createWeight: (b: { weight_kg: number; measured_on?: string; note?: string }) =>
+    request<BodyWeight>("POST", "/api/v1/weights", b),
+  deleteWeight: (id: number) => request<void>("DELETE", `/api/v1/weights/${id}`),
+
   stats: (from?: string, to?: string) => {
     const q = new URLSearchParams();
     if (from) q.set("from", from);
@@ -97,24 +108,3 @@ export const api = {
     return request<Dashboard>("GET", `/api/v1/stats${s ? `?${s}` : ""}`);
   },
 };
-
-let muscleGroupsCache: MuscleGroup[] | null = null;
-
-/**
- * Справочник мышечных групп. Эндпоинта в API пока нет, поэтому при любой
- * неудаче используется сгенерированный из миграций фолбэк.
- */
-async function muscleGroups(): Promise<MuscleGroup[]> {
-  if (muscleGroupsCache) return muscleGroupsCache;
-  try {
-    const remote = await request<MuscleGroup[]>("GET", "/api/v1/muscle-groups");
-    if (Array.isArray(remote) && remote.length > 0) {
-      muscleGroupsCache = remote;
-      return remote;
-    }
-  } catch {
-    // эндпоинта нет — падать из-за этого не нужно
-  }
-  muscleGroupsCache = FALLBACK_MUSCLE_GROUPS;
-  return muscleGroupsCache;
-}

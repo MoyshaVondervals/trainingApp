@@ -22,7 +22,6 @@ function loadSession(): Session | null {
   if (!raw || !token) return null;
   try {
     const s = JSON.parse(raw) as Session;
-    // Токен с истёкшим сроком не отправляем — сразу считаем сессию мёртвой.
     if (new Date(s.expiresAt).getTime() <= Date.now()) return null;
     return { ...s, token };
   } catch {
@@ -43,7 +42,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUnauthorizedHandler(logout);
   }, [logout]);
 
-  // Токен протух — выкидываем, не дожидаясь следующего 401.
   useEffect(() => {
     if (!session) return;
     const ms = new Date(session.expiresAt).getTime() - Date.now();

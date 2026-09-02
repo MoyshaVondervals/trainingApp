@@ -1,0 +1,15 @@
+.env
+.env.*
+*.pem
+*.key
+
+.git
+.idea
+.vscode
+frontend
+deploy
+imgs
+bin
+*.md
+docker-compose*.yml
+Dockerfile

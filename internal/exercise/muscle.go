@@ -3,6 +3,7 @@ package exercise
 import (
 	"errors"
 	"fmt"
+	"strings"
 )
 
 const (
@@ -10,7 +11,10 @@ const (
 	RoleSecondary = "secondary"
 )
 
-const maxMusclesPerExercise = 20
+const (
+	maxMusclesPerExercise = 20
+	maxMuscleCodeLen      = 50
+)
 
 type Muscle struct {
 	MuscleGroupID int64  `json:"muscle_group_id" db:"muscle_group_id"`
@@ -58,4 +62,27 @@ func ValidateMuscles(muscles []Muscle) error {
 		return fmt.Errorf("exactly one muscle group must have role %q, got %d", RolePrimary, primaries)
 	}
 	return nil
+}
+
+type WithRole struct {
+	Exercise
+	Role string `json:"role" db:"role"`
+}
+
+func ValidateGroupCode(code string) error {
+	if strings.TrimSpace(code) == "" {
+		return errors.New("muscle group code is required")
+	}
+	if len(code) > maxMuscleCodeLen {
+		return fmt.Errorf("muscle group code must be at most %d characters", maxMuscleCodeLen)
+	}
+	return nil
+}
+
+type Group struct {
+	ID         int64  `json:"id" db:"id"`
+	Code       string `json:"code" db:"code"`
+	Name       string `json:"name" db:"name"`
+	RegionCode string `json:"region_code" db:"region_code"`
+	RegionName string `json:"region_name" db:"region_name"`
 }

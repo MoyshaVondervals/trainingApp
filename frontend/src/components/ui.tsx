@@ -22,15 +22,10 @@ export function fmtNum(n: number): string {
   return new Intl.NumberFormat("ru-RU", { maximumFractionDigits: 1 }).format(n);
 }
 
-/** Приводит ошибку любого происхождения к строке для ErrorBox. */
 export function msg(e: unknown): string {
   return e instanceof Error ? e.message : "Неизвестная ошибка";
 }
 
-/**
- * Длительность тренировки. Для незавершённой отсчёт идёт до `now`,
- * который приходит извне — иначе значение не обновлялось бы на экране.
- */
 export function fmtDuration(startIso: string, endIso: string | null, now = Date.now()): string {
   const start = new Date(startIso).getTime();
   const end = endIso ? new Date(endIso).getTime() : now;
@@ -45,7 +40,6 @@ export function fmtDuration(startIso: string, endIso: string | null, now = Date.
   return `${hours} ч ${String(minutes).padStart(2, "0")} мин`;
 }
 
-/** Тикающее «сейчас». Нужен только там, где на экране есть идущая тренировка. */
 export function useNow(active: boolean, intervalMs = 30_000): number {
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {

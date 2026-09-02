@@ -17,6 +17,8 @@ type ExerciseMuscleHandler struct {
 type ExerciseMuscleStore interface {
 	ListByExercise(ctx context.Context, userID, exerciseID int64) ([]exercise.Muscle, error)
 	ReplaceForExercise(ctx context.Context, userID, exerciseID int64, muscles []exercise.Muscle) error
+	ListExercisesByGroup(ctx context.Context, userID int64, code string, limit int) ([]exercise.WithRole, error)
+	ListGroups(ctx context.Context) ([]exercise.Group, error)
 }
 
 func NewExerciseMuscleHandler(store ExerciseMuscleStore) *ExerciseMuscleHandler {
@@ -86,4 +88,43 @@ func (h *ExerciseMuscleHandler) replace(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 	writeJSON(w, http.StatusOK, muscles)
+}
+
+func (h *ExerciseMuscleHandler) listExercisesByGroup(w http.ResponseWriter, r *http.Request) {
+	code := r.PathValue("code")
+	if err := exercise.ValidateGroupCode(code); err != nil {
+		writeError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	limit, err := parseLimit(r)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	userID, ok := userIDFrom(r.Context())
+	if !ok {
+		writeError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+	found, err := h.exerciseMuscle.ListExercisesByGroup(r.Context(), userID, code, limit)
+	if err != nil {
+		if errors.Is(err, exercise.ErrMuscleGroupNotFound) {
+			writeError(w, http.StatusNotFound, "muscle group not found")
+			return
+		}
+		slog.Error("list exercises by muscle group", "code", code, "err", err)
+		writeError(w, http.StatusInternalServerError, "internal error")
+		return
+	}
+	writeJSON(w, http.StatusOK, found)
+}
+
+func (h *ExerciseMuscleHandler) listGroups(w http.ResponseWriter, r *http.Request) {
+	groups, err := h.exerciseMuscle.ListGroups(r.Context())
+	if err != nil {
+		slog.Error("list muscle groups", "err", err)
+		writeError(w, http.StatusInternalServerError, "internal error")
+		return
+	}
+	writeJSON(w, http.StatusOK, groups)
 }

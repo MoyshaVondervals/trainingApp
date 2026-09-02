@@ -67,3 +67,14 @@ export type MuscleGroup = {
   region_code: string;
   region_name: string;
 };
+
+export type ExerciseWithRole = Exercise & { role: "primary" | "secondary" };
+
+export type BodyWeight = {
+  id: number;
+  user_id: number;
+  weight_kg: number;
+  measured_on: string;
+  note: string;
+  created_at: string;
+};

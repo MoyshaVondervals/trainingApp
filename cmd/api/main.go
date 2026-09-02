@@ -50,6 +50,7 @@ func run() error {
 		api.NewSetHandler(postgres.NewSetRepo(db)),
 		api.NewExerciseMuscleHandler(postgres.NewExerciseMusclesRepo(db)),
 		api.NewStatsHandler(postgres.NewStatsRepo(db)),
+		api.NewWeightHandler(postgres.NewWeightRepo(db)),
 	)
 	h := api.Recover(logger)(api.RequestLogger(logger)(router))
 	srv := &http.Server{

@@ -10,7 +10,6 @@ export function Workouts() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
-  // Тикаем, только пока в списке есть незавершённая тренировка.
   const now = useNow(items.some((w) => w.ended_at === null));
 
   const load = useCallback(async () => {
@@ -78,8 +77,7 @@ export function Workouts() {
               </div>
               <div className="small muted">{w.note || "без заметки"}</div>
             </div>
-            {/* Клик по кнопке не должен всплывать до строки и открывать тренировку. */}
-            <button className="btn-danger btn-sm"
+                        <button className="btn-danger btn-sm"
                     onClick={(e) => { e.stopPropagation(); void remove(w.id); }}>
               Удалить
             </button>

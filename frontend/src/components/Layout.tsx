@@ -12,6 +12,7 @@ export function Layout() {
         <nav className="nav">
           <NavLink to="/workouts">Тренировки</NavLink>
           <NavLink to="/exercises">Упражнения</NavLink>
+          <NavLink to="/weight">Вес</NavLink>
           <NavLink to="/stats">Статистика</NavLink>
         </nav>
         <div className="row">

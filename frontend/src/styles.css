@@ -36,7 +36,6 @@ h1, h2, h3 { margin: 0 0 12px; letter-spacing: -0.02em; }
 h1 { font-size: 26px; }
 h2 { font-size: 19px; }
 
-/* --- layout --- */
 .app { min-height: 100vh; display: flex; flex-direction: column; }
 
 .topbar {
@@ -71,7 +70,6 @@ h2 { font-size: 19px; }
   gap: 16px; margin-bottom: 20px; flex-wrap: wrap;
 }
 
-/* --- cards --- */
 .card {
   background: linear-gradient(180deg, var(--graphite-700), var(--graphite-800));
   border: 1px solid var(--graphite-600);
@@ -94,7 +92,6 @@ h2 { font-size: 19px; }
 .muted { color: var(--text-dim); }
 .small { font-size: 13px; }
 
-/* --- controls --- */
 button {
   font: inherit; font-weight: 600; cursor: pointer;
   border: 1px solid transparent; border-radius: 10px; padding: 9px 16px;
@@ -140,7 +137,6 @@ label { display: block; font-size: 13px; color: var(--text-dim); margin-bottom: 
 
 .empty { text-align: center; padding: 44px 16px; color: var(--text-dim); }
 
-/* --- list rows --- */
 .list-row {
   display: flex; align-items: center; justify-content: space-between; gap: 12px;
   padding: 12px 14px; border: 1px solid var(--graphite-600); border-radius: 12px;
@@ -149,11 +145,9 @@ label { display: block; font-size: 13px; color: var(--text-dim); margin-bottom: 
 .list-row + .list-row { margin-top: 8px; }
 .list-row:hover { border-color: var(--graphite-500); }
 
-/* --- bars (статистика) --- */
 .bar-track { height: 8px; background: var(--graphite-600); border-radius: 999px; overflow: hidden; }
 .bar-fill { height: 100%; background: linear-gradient(90deg, var(--orange), var(--teal)); }
 
-/* --- auth --- */
 .auth-wrap { min-height: 100vh; display: grid; place-items: center; padding: 24px; }
 .auth-card { width: min(400px, 100%); }
 .auth-logo {
@@ -167,7 +161,6 @@ table { width: 100%; border-collapse: collapse; }
 th, td { text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--graphite-600); }
 th { color: var(--text-dim); font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; }
 
-/* --- чипы выбора мышц --- */
 .chips { display: flex; flex-wrap: wrap; gap: 7px; }
 
 .chip {
@@ -205,7 +198,6 @@ button.chip { padding: 6px 12px; }
 
 .region-block { margin-top: 10px; }
 
-/* --- кликабельные строки --- */
 .brand-link { display: inline-block; }
 .brand-link:hover .brand { color: var(--orange); }
 
@@ -217,16 +209,11 @@ tr.clickable:hover td { background: var(--graphite-700); }
 tr.open td { background: var(--graphite-700); }
 .set-details td { background: var(--graphite-900); }
 
-/* Ряд полей с подписями: кнопка выравнивается по низу, а не по центру. */
 .row.end { align-items: flex-end; }
 
-/* ==========================================================================
-   Мобильные экраны (iPhone). Навигация уезжает вниз — большим пальцем
-   до верха экрана не дотянуться.
-   ========================================================================== */
 @media (max-width: 720px) {
   body {
-    /* Safari занижает 100vh под свою панель, поэтому опорой служит dvh. */
+    
     min-height: 100dvh;
     -webkit-tap-highlight-color: transparent;
   }
@@ -235,8 +222,7 @@ tr.open td { background: var(--graphite-700); }
     padding: 10px 16px;
     padding-top: max(10px, env(safe-area-inset-top));
     gap: 12px;
-    /* backdrop-filter сделал бы шапку containing block для fixed-навигации,
-       и та прилипла бы к шапке вместо низа экрана. */
+    
     backdrop-filter: none;
     background: var(--graphite-800);
   }
@@ -265,7 +251,7 @@ tr.open td { background: var(--graphite-700); }
 
   .content {
     padding: 16px 14px;
-    /* Место под нижнюю навигацию, чтобы она не накрывала последнюю карточку. */
+    
     padding-bottom: calc(78px + env(safe-area-inset-bottom));
   }
 
@@ -277,21 +263,21 @@ tr.open td { background: var(--graphite-700); }
   .grid.cols-4 { grid-template-columns: repeat(2, 1fr); gap: 10px; }
   .stat-value { font-size: 24px; }
 
-  /* На iOS шрифт мельче 16px заставляет Safari зумить страницу при фокусе. */
+  
   input, textarea, select { font-size: 16px; padding: 11px 12px; }
 
-  /* Пальцем нужно попадать без прицеливания — 44px минимум по гайдлайну Apple. */
+  
   button { min-height: 44px; padding: 11px 16px; }
   button.btn-sm { min-height: 36px; }
   .chip-main, .chip-star { min-height: 0; }
 
-  /* Поля формы подхода встают в столбик. */
+  
   .row.end { flex-direction: column; align-items: stretch; }
   .row.end > div, .row.end > button { width: 100%; }
 
   .list-row { padding: 12px; gap: 10px; }
 
-  /* Узкая таблица подходов скроллится сама, а не растягивает страницу. */
+  
   .card table { display: block; overflow-x: auto; white-space: nowrap; }
   th, td { padding: 8px 6px; }
 
@@ -302,3 +288,47 @@ tr.open td { background: var(--graphite-700); }
   .grid.cols-4 { grid-template-columns: 1fr; }
   .nav a { font-size: 12px; }
 }
+
+.muscle-row {
+  cursor: pointer;
+  padding: 6px 8px;
+  margin: 0 -8px;
+  border-radius: 10px;
+  transition: background 0.15s;
+}
+.muscle-row:hover { background: var(--graphite-700); }
+
+.muscle-drawer {
+  margin: 8px 0 4px;
+  padding: 10px 12px;
+  background: var(--graphite-900);
+  border: 1px solid var(--graphite-600);
+  border-radius: 10px;
+}
+
+.chart-wrap { position: relative; }
+
+.chart {
+  width: 100%;
+  height: auto;
+  display: block;
+  overflow: visible;
+}
+
+.chart-tip {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+  background: var(--graphite-900);
+  border: 1px solid var(--graphite-500);
+  border-radius: 10px;
+  padding: 7px 11px;
+  font-size: 13px;
+  white-space: nowrap;
+  pointer-events: none;
+  box-shadow: var(--shadow);
+}
+
+.stat-value .unit { font-size: 14px; color: var(--text-dim); font-weight: 600; }
+.stat-value.up { color: var(--teal); }
+.stat-value.down { color: var(--orange); }

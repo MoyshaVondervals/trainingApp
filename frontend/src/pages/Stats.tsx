@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { api } from "../api/client";
-import type { Dashboard } from "../api/types";
+import type { Dashboard, ExerciseWithRole } from "../api/types";
 import { Empty, ErrorBox, fmtDate, fmtNum, msg } from "../components/ui";
 
 function isoDay(d: Date): string {
@@ -14,10 +14,13 @@ export function Stats() {
   const [from, setFrom] = useState(isoDay(new Date(Date.now() - 90 * 864e5)));
   const [to, setTo] = useState(isoDay(new Date()));
 
+  const [openMuscle, setOpenMuscle] = useState<string | null>(null);
+  const [byMuscle, setByMuscle] = useState<Record<string, ExerciseWithRole[]>>({});
+  const [muscleError, setMuscleError] = useState<string | null>(null);
+
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      // Бэкенд ждёт date-time, поэтому день дополняется границами суток.
       setData(await api.stats(`${from}T00:00:00Z`, `${to}T23:59:59Z`));
       setError(null);
     } catch (e) {
@@ -30,6 +33,19 @@ export function Stats() {
   useEffect(() => { void load(); }, [load]);
 
   const maxVolume = data?.muscles.reduce((m, x) => Math.max(m, x.volume), 0) ?? 0;
+
+  async function toggleMuscle(code: string) {
+    if (openMuscle === code) { setOpenMuscle(null); return; }
+    setOpenMuscle(code);
+    setMuscleError(null);
+    if (byMuscle[code]) return;
+    try {
+      const list = await api.exercisesByMuscle(code);
+      setByMuscle((prev) => ({ ...prev, [code]: list }));
+    } catch (e) {
+      setMuscleError(msg(e));
+    }
+  }
 
   return (
     <>
@@ -72,16 +88,24 @@ export function Stats() {
             {data.muscles.length === 0 && <div className="small muted">Данных за период нет.</div>}
             {data.muscles.map((m) => (
               <div key={m.code} style={{ marginBottom: 12 }}>
-                <div className="row between small">
-                  <span><strong>{m.name}</strong> <span className="muted">· {m.region}</span></span>
-                  <span className="muted">
-                    {fmtNum(m.volume)} кг · {m.sets} подх. · {m.reps} повт.
-                  </span>
+                <div className="muscle-row" role="button" tabIndex={0}
+                     onClick={() => void toggleMuscle(m.code)}
+                     onKeyDown={(e) => { if (e.key === "Enter") void toggleMuscle(m.code); }}
+                     title="Чем качать эту мышцу">
+                  <div className="row between small">
+                    <span><strong>{m.name}</strong> <span className="muted">· {m.region}</span></span>
+                    <span className="muted">
+                      {fmtNum(m.volume)} кг · {m.sets} подх. · {m.reps} повт.
+                    </span>
+                  </div>
+                  <div className="bar-track" style={{ marginTop: 5 }}>
+                    <div className="bar-fill"
+                         style={{ width: maxVolume > 0 ? `${(m.volume / maxVolume) * 100}%` : "0%" }} />
+                  </div>
                 </div>
-                <div className="bar-track" style={{ marginTop: 5 }}>
-                  <div className="bar-fill"
-                       style={{ width: maxVolume > 0 ? `${(m.volume / maxVolume) * 100}%` : "0%" }} />
-                </div>
+                {openMuscle === m.code && (
+                  <MuscleExercises list={byMuscle[m.code]} error={muscleError} />
+                )}
               </div>
             ))}
           </div>
@@ -114,5 +138,28 @@ export function Stats() {
         </>
       )}
     </>
+  );
+}
+
+function MuscleExercises({ list, error }: { list?: ExerciseWithRole[]; error: string | null }) {
+  if (error) return <div className="muscle-drawer"><ErrorBox error={error} /></div>;
+  if (!list) return <div className="muscle-drawer small muted">Загрузка упражнений…</div>;
+  if (list.length === 0) {
+    return <div className="muscle-drawer small muted">Упражнений на эту группу пока нет.</div>;
+  }
+  return (
+    <div className="muscle-drawer">
+      {list.map((e) => (
+        <div className="row between" key={e.id} style={{ padding: "5px 0" }}>
+          <span className="small">
+            {e.name}
+            {e.user_id !== null && <span className="badge own" style={{ marginLeft: 8 }}>личное</span>}
+          </span>
+          <span className={`badge ${e.role === "primary" ? "own" : "done"}`}>
+            {e.role === "primary" ? "основная" : "вспомогательная"}
+          </span>
+        </div>
+      ))}
+    </div>
   );
 }
