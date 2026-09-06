@@ -24,6 +24,7 @@ export type Workout = {
   started_at: string;
   ended_at: string | null;
   note: string;
+  plan_id: number | null;
 };
 
 export type Set = {
@@ -77,4 +78,27 @@ export type BodyWeight = {
   measured_on: string;
   note: string;
   created_at: string;
+};
+
+export type LastPerformance = {
+  workout_id: number;
+  performed_at: string;
+  sets: Set[];
+};
+
+export type PlanItem = {
+  exercise_id: number;
+  exercise_name?: string;
+  position: number;
+  target_sets: number;
+  target_reps: number;
+};
+
+export type Plan = {
+  id: number;
+  user_id: number;
+  name: string;
+  note: string;
+  created_at: string;
+  exercises?: PlanItem[];
 };

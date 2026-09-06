@@ -1,6 +1,6 @@
 import type {
-  BodyWeight, Dashboard, Exercise, ExerciseWithRole, LoginResponse, Muscle, MuscleGroup,
-  Set, User, Workout,
+  BodyWeight, Dashboard, Exercise, ExerciseWithRole, LastPerformance, LoginResponse, Muscle,
+  MuscleGroup, Plan, PlanItem, Set, User, Workout,
 } from "./types";
 
 const TOKEN_KEY = "trainingapp.token";
@@ -83,7 +83,7 @@ export const api = {
 
   workouts: (limit = 100) => request<Workout[]>("GET", `/api/v1/workouts?limit=${limit}`),
   workout: (id: number) => request<Workout>("GET", `/api/v1/workouts/${id}`),
-  createWorkout: (b: { started_at?: string; note?: string }) =>
+  createWorkout: (b: { started_at?: string; note?: string; plan_id?: number }) =>
     request<Workout>("POST", "/api/v1/workouts", b),
   updateWorkout: (id: number, b: { note?: string; started_at?: string }) =>
     request<Workout>("PATCH", `/api/v1/workouts/${id}`, b),
@@ -91,6 +91,21 @@ export const api = {
   finishWorkout: (id: number) => request<Workout>("POST", `/api/v1/workouts/finish/${id}`),
 
   setsByWorkout: (id: number) => request<Set[]>("GET", `/api/v1/sets/byWorkout/${id}`),
+  lastSets: (exerciseId: number, excludeWorkoutId?: number, planId?: number | null) => {
+    const q = new URLSearchParams();
+    if (excludeWorkoutId) q.set("exclude_workout", String(excludeWorkoutId));
+    if (planId) q.set("plan_id", String(planId));
+    const s = q.toString();
+    return request<LastPerformance>("GET", `/api/v1/sets/last/${exerciseId}${s ? `?${s}` : ""}`);
+  },
+
+  plans: (limit = 50) => request<Plan[]>("GET", `/api/v1/plans?limit=${limit}`),
+  plan: (id: number) => request<Plan>("GET", `/api/v1/plans/${id}`),
+  createPlan: (b: { name: string; note?: string; exercises: PlanItem[] }) =>
+    request<Plan>("POST", "/api/v1/plans", b),
+  updatePlan: (id: number, b: { name: string; note?: string; exercises: PlanItem[] }) =>
+    request<Plan>("PUT", `/api/v1/plans/${id}`, b),
+  deletePlan: (id: number) => request<void>("DELETE", `/api/v1/plans/${id}`),
   createSet: (b: {
     exercise_id: number; workout_id: number; set_number: number; reps: number; weight: number;
   }) => request<Set>("POST", "/api/v1/sets", b),

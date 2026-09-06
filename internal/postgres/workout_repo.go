@@ -10,7 +10,7 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-const workoutColumns = `id, user_id, started_at, ended_at, note`
+const workoutColumns = `id, user_id, started_at, ended_at, note, plan_id`
 
 type WorkoutRepo struct {
 	db *sqlx.DB
@@ -21,8 +21,21 @@ func NewWorkoutRepo(db *sqlx.DB) *WorkoutRepo {
 }
 
 func (r *WorkoutRepo) Create(ctx context.Context, w workout.Workout) (workout.Workout, error) {
-	const q = `INSERT INTO workouts (user_id, started_at, note) VALUES ($1, $2, $3)
-RETURNING ` + workoutColumns
+	if w.PlanID != nil {
+		const q = `INSERT INTO workouts (user_id, started_at, note, plan_id) SELECT $1, $2, $3, p.id 
+                FROM plans p WHERE p.id = $4 AND p.user_id = $1 RETURNING ` + workoutColumns
+		var created workout.Workout
+		err := r.db.GetContext(ctx, &created, q, w.UserID, w.StartedAt, w.Note, *w.PlanID)
+		if err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				return workout.Workout{}, workout.ErrPlanNotFound
+			}
+			return workout.Workout{}, fmt.Errorf("create workout with plan: %w", err)
+		}
+		return created, nil
+	}
+
+	const q = `INSERT INTO workouts (user_id, started_at, note) VALUES ($1, $2, $3) RETURNING ` + workoutColumns
 	var created workout.Workout
 	err := r.db.GetContext(ctx, &created, q, w.UserID, w.StartedAt, w.Note)
 	if err != nil {
@@ -45,8 +58,7 @@ func (r *WorkoutRepo) GetByID(ctx context.Context, userID, id int64) (workout.Wo
 }
 
 func (r *WorkoutRepo) List(ctx context.Context, userID int64, limit int) ([]workout.Workout, error) {
-	const q = `SELECT ` + workoutColumns + ` FROM workouts WHERE user_id = $1
-ORDER BY started_at DESC LIMIT $2`
+	const q = `SELECT ` + workoutColumns + ` FROM workouts WHERE user_id = $1 ORDER BY started_at DESC LIMIT $2`
 	res := make([]workout.Workout, 0, limit)
 	if err := r.db.SelectContext(ctx, &res, q, userID, limit); err != nil {
 		return nil, fmt.Errorf("list workouts: %w", err)
@@ -55,8 +67,7 @@ ORDER BY started_at DESC LIMIT $2`
 }
 
 func (r *WorkoutRepo) UpdateNoteByID(ctx context.Context, userID int64, e workout.Workout) (workout.Workout, error) {
-	const q = `UPDATE workouts SET note = $1 WHERE id = $2 AND user_id = $3
-RETURNING ` + workoutColumns
+	const q = `UPDATE workouts SET note = $1 WHERE id = $2 AND user_id = $3 RETURNING ` + workoutColumns
 	var w workout.Workout
 	err := r.db.GetContext(ctx, &w, q, e.Note, e.ID, userID)
 	if err != nil {
@@ -69,9 +80,7 @@ RETURNING ` + workoutColumns
 }
 
 func (r *WorkoutRepo) FinishTraining(ctx context.Context, userID, id int64) (workout.Workout, error) {
-	const q = `UPDATE workouts SET ended_at = now()
-WHERE id = $1 AND user_id = $2 AND ended_at IS NULL
-RETURNING ` + workoutColumns
+	const q = `UPDATE workouts SET ended_at = now() WHERE id = $1 AND user_id = $2 AND ended_at IS NULL RETURNING ` + workoutColumns
 	var w workout.Workout
 	err := r.db.GetContext(ctx, &w, q, id, userID)
 	if err != nil {

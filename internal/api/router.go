@@ -4,7 +4,7 @@ import (
 	"net/http"
 )
 
-func Router(ex *ExerciseHandler, users *UserHandler, wo *WorkoutsHandler, s *SetHandler, em *ExerciseMuscleHandler, st *StatsHandler, bw *WeightHandler) http.Handler {
+func Router(ex *ExerciseHandler, users *UserHandler, wo *WorkoutsHandler, s *SetHandler, em *ExerciseMuscleHandler, st *StatsHandler, bw *WeightHandler, pl *PlanHandler) http.Handler {
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("GET /health", health)
@@ -36,11 +36,18 @@ func Router(ex *ExerciseHandler, users *UserHandler, wo *WorkoutsHandler, s *Set
 	protected.HandleFunc("DELETE /api/v1/sets/{id}", s.delete)
 	protected.HandleFunc("GET /api/v1/sets/{id}", s.getById)
 	protected.HandleFunc("GET /api/v1/sets/byWorkout/{id}", s.listByWorkout)
+	protected.HandleFunc("GET /api/v1/sets/last/{id}", s.lastByExercise)
 	protected.HandleFunc("GET /api/v1/stats", st.dashboard)
 
 	protected.HandleFunc("POST /api/v1/weights", bw.create)
 	protected.HandleFunc("GET /api/v1/weights", bw.list)
 	protected.HandleFunc("DELETE /api/v1/weights/{id}", bw.delete)
+
+	protected.HandleFunc("POST /api/v1/plans", pl.create)
+	protected.HandleFunc("GET /api/v1/plans", pl.list)
+	protected.HandleFunc("GET /api/v1/plans/{id}", pl.get)
+	protected.HandleFunc("PUT /api/v1/plans/{id}", pl.update)
+	protected.HandleFunc("DELETE /api/v1/plans/{id}", pl.delete)
 
 	mux.Handle("/api/v1/", users.RequireAuth(protected))
 

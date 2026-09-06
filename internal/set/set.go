@@ -6,6 +6,7 @@ import (
 )
 
 var ErrNotFound = errors.New("set not found")
+var ErrAlreadyExists = errors.New("set number already used")
 
 const (
 	maxSetNumber  = 30
@@ -34,4 +35,10 @@ func (s *Set) Validate() error {
 		return errors.New("invalid set weight it has to be between 0 and 350")
 	}
 	return nil
+}
+
+type LastPerformance struct {
+	WorkoutID   int64     `json:"workout_id" db:"workout_id"`
+	PerformedAt time.Time `json:"performed_at" db:"performed_at"`
+	Sets        []Set     `json:"sets"`
 }

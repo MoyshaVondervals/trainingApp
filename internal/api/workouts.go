@@ -31,6 +31,7 @@ func NewWorkoutsHandler(store WorkoutStore) *WorkoutsHandler {
 type workoutRequest struct {
 	StartedAt time.Time `json:"started_at"`
 	Note      string    `json:"note"`
+	PlanID    *int64    `json:"plan_id"`
 }
 
 func (h *WorkoutsHandler) startTraining(w http.ResponseWriter, r *http.Request) {
@@ -55,6 +56,7 @@ func (h *WorkoutsHandler) startTraining(w http.ResponseWriter, r *http.Request) 
 		UserID:    userId,
 		StartedAt: startedAt,
 		Note:      req.Note,
+		PlanID:    req.PlanID,
 	}
 	if err := workoutObj.Validate(); err != nil {
 		writeError(w, http.StatusUnprocessableEntity, err.Error())
@@ -62,6 +64,10 @@ func (h *WorkoutsHandler) startTraining(w http.ResponseWriter, r *http.Request) 
 	}
 	created, err := h.workouts.Create(r.Context(), workoutObj)
 	if err != nil {
+		if errors.Is(err, workout.ErrPlanNotFound) {
+			writeError(w, http.StatusNotFound, "plan not found")
+			return
+		}
 		slog.Error("create workout", "err", err)
 		writeError(w, http.StatusInternalServerError, "error creating workout")
 		return

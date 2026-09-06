@@ -32,6 +32,9 @@ func (r *SetRepo) Create(ctx context.Context, userID int64, s set.Set) (set.Set,
 		if errors.Is(err, sql.ErrNoRows) {
 			return set.Set{}, set.ErrNotFound
 		}
+		if isUniqueViolation(err) {
+			return set.Set{}, set.ErrAlreadyExists
+		}
 		return set.Set{}, fmt.Errorf("create set: %w", err)
 	}
 	return created, nil
@@ -47,6 +50,9 @@ func (r *SetRepo) Update(ctx context.Context, userID int64, s set.Set) (set.Set,
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return set.Set{}, set.ErrNotFound
+		}
+		if isUniqueViolation(err) {
+			return set.Set{}, set.ErrAlreadyExists
 		}
 		return set.Set{}, fmt.Errorf("update set: %w", err)
 	}
@@ -97,4 +103,29 @@ func (r *SetRepo) ListByWorkout(ctx context.Context, userID, workoutID int64, li
 		return nil, fmt.Errorf("list sets: %w", err)
 	}
 	return res, nil
+}
+
+func (r *SetRepo) LastPerformance(ctx context.Context, userID, exerciseID, excludeWorkoutID int64, planID *int64) (set.LastPerformance, error) {
+	const workoutQ = `SELECT w.id AS workout_id, w.started_at AS performed_at FROM workouts w
+		JOIN sets s ON s.workout_id = w.id WHERE w.user_id = $1 AND s.exercise_id = $2 AND w.id <> $3 GROUP BY w.id, w.started_at, w.plan_id
+		ORDER BY COALESCE($4::bigint IS NOT NULL AND w.plan_id = $4, FALSE) DESC, w.started_at DESC LIMIT 1`
+	var last set.LastPerformance
+	err := r.db.GetContext(ctx, &last, workoutQ, userID, exerciseID, excludeWorkoutID, planID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return set.LastPerformance{}, set.ErrNotFound
+		}
+		return set.LastPerformance{}, fmt.Errorf("last performance workout: %w", err)
+	}
+
+	const setsQ = `SELECT ` + setColumns + `
+		FROM sets s
+		WHERE s.workout_id = $1 AND s.exercise_id = $2
+		ORDER BY s.set_number`
+	sets := make([]set.Set, 0, 8)
+	if err := r.db.SelectContext(ctx, &sets, setsQ, last.WorkoutID, exerciseID); err != nil {
+		return set.LastPerformance{}, fmt.Errorf("last performance sets: %w", err)
+	}
+	last.Sets = sets
+	return last, nil
 }

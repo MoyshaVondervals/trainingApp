@@ -11,6 +11,8 @@ import (
 	"trainingApp/internal/set"
 )
 
+const maxSetsPerWorkout = 900
+
 type SetHandler struct {
 	sets SetsStore
 }
@@ -20,6 +22,7 @@ type SetsStore interface {
 	Delete(ctx context.Context, userID int64, s set.Set) error
 	GetById(ctx context.Context, userID, id int64) (set.Set, error)
 	ListByWorkout(ctx context.Context, userID, workoutID int64, limit int) ([]set.Set, error)
+	LastPerformance(ctx context.Context, userID, exerciseID, excludeWorkoutID int64, planID *int64) (set.LastPerformance, error)
 }
 
 func NewSetHandler(s SetsStore) *SetHandler {
@@ -71,6 +74,10 @@ func (h *SetHandler) create(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusNotFound, "workout not found")
 			return
 		}
+		if errors.Is(err, set.ErrAlreadyExists) {
+			writeError(w, http.StatusConflict, "set with this number already exists for the exercise")
+			return
+		}
 		slog.Error("create set", "err", err)
 		writeError(w, http.StatusInternalServerError, "internal error")
 		return
@@ -112,6 +119,10 @@ func (h *SetHandler) update(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		if errors.Is(err, set.ErrNotFound) {
 			writeError(w, http.StatusNotFound, set.ErrNotFound.Error())
+			return
+		}
+		if errors.Is(err, set.ErrAlreadyExists) {
+			writeError(w, http.StatusConflict, "set with this number already exists for the exercise")
 			return
 		}
 		slog.Error("update set", "set_id", id, "err", err)
@@ -187,7 +198,7 @@ func (h *SetHandler) listByWorkout(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusUnauthorized, "unauthorized")
 		return
 	}
-	s, err := h.sets.ListByWorkout(r.Context(), userId, id, defaultLimit)
+	s, err := h.sets.ListByWorkout(r.Context(), userId, id, maxSetsPerWorkout)
 	if err != nil {
 		if errors.Is(err, set.ErrNotFound) {
 			writeError(w, http.StatusNotFound, set.ErrNotFound.Error())
@@ -198,4 +209,48 @@ func (h *SetHandler) listByWorkout(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, s)
+}
+
+func (h *SetHandler) lastByExercise(w http.ResponseWriter, r *http.Request) {
+	exerciseID, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "invalid id")
+		return
+	}
+	userID, ok := userIDFrom(r.Context())
+	if !ok {
+		writeError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
+	var excludeWorkoutID int64
+	if raw := r.URL.Query().Get("exclude_workout"); raw != "" {
+		excludeWorkoutID, err = strconv.ParseInt(raw, 10, 64)
+		if err != nil {
+			writeError(w, http.StatusBadRequest, "exclude_workout must be a number")
+			return
+		}
+	}
+
+	var planID *int64
+	if raw := r.URL.Query().Get("plan_id"); raw != "" {
+		parsed, err := strconv.ParseInt(raw, 10, 64)
+		if err != nil {
+			writeError(w, http.StatusBadRequest, "plan_id must be a number")
+			return
+		}
+		planID = &parsed
+	}
+
+	last, err := h.sets.LastPerformance(r.Context(), userID, exerciseID, excludeWorkoutID, planID)
+	if err != nil {
+		if errors.Is(err, set.ErrNotFound) {
+			writeError(w, http.StatusNotFound, "no previous sets for this exercise")
+			return
+		}
+		slog.Error("last performance", "exercise_id", exerciseID, "err", err)
+		writeError(w, http.StatusInternalServerError, "error getting last sets")
+		return
+	}
+	writeJSON(w, http.StatusOK, last)
 }

@@ -7,6 +7,7 @@ import (
 )
 
 var ErrNotFound = errors.New("workout not found")
+var ErrPlanNotFound = errors.New("plan not found")
 
 const (
 	maxWorkoutNoteLen = 1000
@@ -18,6 +19,7 @@ type Workout struct {
 	StartedAt time.Time  `json:"started_at" db:"started_at"`
 	EndedAt   *time.Time `json:"ended_at" db:"ended_at"`
 	Note      string     `json:"note" db:"note"`
+	PlanID    *int64     `json:"plan_id" db:"plan_id"`
 }
 
 func (e Workout) Validate() error {

@@ -9,6 +9,7 @@ import { WorkoutDetail } from "./pages/WorkoutDetail";
 import { Exercises } from "./pages/Exercises";
 import { Stats } from "./pages/Stats";
 import { Weight } from "./pages/Weight";
+import { Plans } from "./pages/Plans";
 
 export function App() {
   return (
@@ -23,6 +24,7 @@ export function App() {
             <Route path="/exercises" element={<Exercises />} />
             <Route path="/stats" element={<Stats />} />
             <Route path="/weight" element={<Weight />} />
+            <Route path="/plans" element={<Plans />} />
           </Route>
           <Route path="*" element={<Navigate to="/workouts" replace />} />
         </Routes>
