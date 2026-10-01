@@ -65,7 +65,7 @@ func (h *SetHandler) create(w http.ResponseWriter, r *http.Request) {
 		Weight:     req.Weight,
 	}
 	if err := setObj.Validate(); err != nil {
-		writeError(w, http.StatusBadRequest, err.Error())
+		writeError(w, http.StatusUnprocessableEntity, err.Error())
 		return
 	}
 	created, err := h.sets.Create(r.Context(), userId, setObj)
@@ -112,7 +112,7 @@ func (h *SetHandler) update(w http.ResponseWriter, r *http.Request) {
 		Weight:    req.Weight,
 	}
 	if err := setObj.Validate(); err != nil {
-		writeError(w, http.StatusBadRequest, err.Error())
+		writeError(w, http.StatusUnprocessableEntity, err.Error())
 		return
 	}
 	updated, err := h.sets.Update(r.Context(), userId, setObj)

@@ -6,8 +6,10 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	_ "net/http/pprof"
 	"os"
 	"os/signal"
+	"runtime"
 	"syscall"
 	"time"
 	"trainingApp/internal/api"
@@ -70,6 +72,24 @@ func run() error {
 		}
 	}()
 
+	var pprofSrv *http.Server
+	if addr := os.Getenv("PPROF_ADDR"); addr != "" {
+		runtime.SetBlockProfileRate(1)
+		runtime.SetMutexProfileFraction(1)
+
+		pprofSrv = &http.Server{
+			Addr:              addr,
+			Handler:           http.DefaultServeMux,
+			ReadHeaderTimeout: cfg.ReadHeaderTimeout,
+		}
+		go func() {
+			slog.Info("pprof listening", "addr", addr)
+			if err := pprofSrv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+				slog.Error("pprof listen", "err", err)
+			}
+		}()
+	}
+
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 	<-ctx.Done()
@@ -78,6 +98,11 @@ func run() error {
 	defer cancel()
 	if err := srv.Shutdown(shutdownCtx); err != nil {
 		slog.Error("shutdown", "err", err)
+	}
+	if pprofSrv != nil {
+		if err := pprofSrv.Shutdown(shutdownCtx); err != nil {
+			slog.Error("pprof shutdown", "err", err)
+		}
 	}
 
 	return nil

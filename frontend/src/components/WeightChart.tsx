@@ -93,7 +93,7 @@ export function WeightChart({ items }: { items: BodyWeight[] }) {
         {ticks.map((t) => (
           <g key={t.label}>
             <line x1={PAD.left} y1={t.y} x2={W - PAD.right} y2={t.y}
-                  stroke="var(--graphite-600)" strokeWidth="1" />
+                  stroke="var(--border)" strokeWidth="1" />
             <text x={PAD.left - 8} y={t.y + 4} textAnchor="end"
                   fill="var(--text-dim)" fontSize="11">{t.label}</text>
           </g>
@@ -110,7 +110,7 @@ export function WeightChart({ items }: { items: BodyWeight[] }) {
 
         {points.map((p, i) => (
           <circle key={i} cx={p.x} cy={p.y} r={active && hover === i ? 5.5 : 4}
-                  fill="var(--orange)" stroke="var(--graphite-800)" strokeWidth="2" />
+                  fill="var(--orange)" stroke="var(--surface)" strokeWidth="2" />
         ))}
 
         {active && (

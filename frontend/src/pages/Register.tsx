@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { ErrorBox, msg } from "../components/ui";
+import { ThemeToggle } from "../components/ThemeToggle";
 
 export function Register() {
   const { session, register } = useAuth();
@@ -36,6 +37,7 @@ export function Register() {
 
   return (
     <div className="auth-wrap">
+      <div className="auth-theme"><ThemeToggle /></div>
       <form className="card auth-card" onSubmit={submit}>
         <div className="auth-logo">TRAINING<span>APP</span></div>
         <div className="auth-sub">Создание аккаунта</div>

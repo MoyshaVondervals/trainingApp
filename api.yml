@@ -505,6 +505,7 @@ paths:
         "401": { $ref: "#/components/responses/Unauthorized" }
         "404": { $ref: "#/components/responses/NotFound" }
         "409": { $ref: "#/components/responses/Conflict" }
+        "422": { $ref: "#/components/responses/Unprocessable" }
         "500": { $ref: "#/components/responses/Internal" }
 
   /api/v1/sets/{id}:
@@ -541,6 +542,7 @@ paths:
         "401": { $ref: "#/components/responses/Unauthorized" }
         "404": { $ref: "#/components/responses/NotFound" }
         "409": { $ref: "#/components/responses/Conflict" }
+        "422": { $ref: "#/components/responses/Unprocessable" }
         "500": { $ref: "#/components/responses/Internal" }
     delete:
       tags: [sets]

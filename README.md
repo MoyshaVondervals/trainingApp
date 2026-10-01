@@ -102,7 +102,7 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
 |---|---|
 | `DATABASE_URL` | DSN PostgreSQL; в compose переопределяется адресом внутренней сети |
 | `JWT_SECRET` | ключ подписи токенов, не менее 32 байт |
-| `JWT_TTL` | срок действия токена, по умолчанию `30m` |
+| `JWT_TTL` | срок действия токена; значение по умолчанию `30m`, в контурах проекта задан `24h` |
 | `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB` | учётные данные базы данных |
 | `PORT` | порт HTTP-сервера, по умолчанию `8080` |
 | `LOG_LEVEL`, `LOG_FORMAT` | уровень детализации и формат журналов (`text` либо `json`) |
