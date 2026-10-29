@@ -521,3 +521,30 @@ select option {
   top: max(16px, env(safe-area-inset-top));
   right: 16px;
 }
+
+
+.link-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 11px;
+  border: 1px solid var(--teal-dim);
+  border-radius: 8px;
+  color: var(--teal);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.link-btn:hover {
+  color: var(--on-accent);
+  background: var(--teal);
+  border-color: var(--teal);
+}
+
+.rest-card { border-color: var(--teal-dim); }
+
+.rest-value {
+  color: var(--teal);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}

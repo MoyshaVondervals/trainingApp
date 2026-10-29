@@ -37,6 +37,7 @@ type ExerciseStore interface {
 type createExerciseRequest struct {
 	Name        string `json:"name"`
 	Description string `json:"description"`
+	Link        string `json:"link"`
 }
 
 func (h *ExerciseHandler) deleteExercise(w http.ResponseWriter, r *http.Request) {
@@ -84,6 +85,7 @@ func (h *ExerciseHandler) updateExercise(w http.ResponseWriter, r *http.Request)
 		ID:          id,
 		Name:        req.Name,
 		Description: req.Description,
+		Link:        req.Link,
 	}
 	if err := exerciseObj.Validate(); err != nil {
 		writeError(w, http.StatusBadRequest, err.Error())
@@ -125,6 +127,7 @@ func (h *ExerciseHandler) createExercise(w http.ResponseWriter, r *http.Request)
 	exerciseObj := exercise.Exercise{
 		Name:        req.Name,
 		Description: req.Description,
+		Link:        req.Link,
 		UserID:      &userID,
 	}
 	if err := exerciseObj.Validate(); err != nil {

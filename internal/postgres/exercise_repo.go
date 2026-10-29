@@ -17,10 +17,10 @@ func NewExerciseRepo(db *sqlx.DB) *ExerciseRepo {
 }
 
 func (r *ExerciseRepo) Create(ctx context.Context, e exercise.Exercise) (exercise.Exercise, error) {
-	const q = `INSERT INTO exercises (name, description, user_id) VALUES ($1, $2, $3)
-RETURNING id, name, description, user_id, created_at`
+	const q = `INSERT INTO exercises (name, description, link, user_id) VALUES ($1, $2, $3, $4)
+RETURNING id, name, description, link, user_id, created_at`
 	var created exercise.Exercise
-	err := r.db.GetContext(ctx, &created, q, e.Name, e.Description, e.UserID)
+	err := r.db.GetContext(ctx, &created, q, e.Name, e.Description, e.Link, e.UserID)
 	if err != nil {
 		if isUniqueViolation(err) {
 			return exercise.Exercise{}, exercise.ErrAlreadyExists
@@ -44,10 +44,10 @@ func (r *ExerciseRepo) Delete(ctx context.Context, userID, id int64) error {
 }
 
 func (r *ExerciseRepo) UpdateByID(ctx context.Context, userID int64, e exercise.Exercise) (exercise.Exercise, error) {
-	const q = `UPDATE exercises SET name = $1, description = $2 WHERE id = $3 AND user_id = $4
-RETURNING id, name, description, user_id, created_at`
+	const q = `UPDATE exercises SET name = $1, description = $2, link = $3 WHERE id = $4 AND user_id = $5
+RETURNING id, name, description, link, user_id, created_at`
 	var updated exercise.Exercise
-	err := r.db.GetContext(ctx, &updated, q, e.Name, e.Description, e.ID, userID)
+	err := r.db.GetContext(ctx, &updated, q, e.Name, e.Description, e.Link, e.ID, userID)
 	if err != nil {
 		if isUniqueViolation(err) {
 			return exercise.Exercise{}, exercise.ErrAlreadyExists
@@ -61,7 +61,7 @@ RETURNING id, name, description, user_id, created_at`
 }
 
 func (r *ExerciseRepo) GetByID(ctx context.Context, userID, id int64) (exercise.Exercise, error) {
-	const q = `SELECT id, name, description, user_id, created_at FROM exercises
+	const q = `SELECT id, name, description, link, user_id, created_at FROM exercises
 WHERE id = $1 AND (user_id IS NULL OR user_id = $2)`
 	var e exercise.Exercise
 	err := r.db.GetContext(ctx, &e, q, id, userID)
@@ -75,7 +75,7 @@ WHERE id = $1 AND (user_id IS NULL OR user_id = $2)`
 }
 
 func (r *ExerciseRepo) List(ctx context.Context, userID int64, limit int) ([]exercise.Exercise, error) {
-	const q = `SELECT id, name, description, user_id, created_at FROM exercises
+	const q = `SELECT id, name, description, link, user_id, created_at FROM exercises
 WHERE (user_id IS NULL OR user_id = $1) ORDER BY id LIMIT $2`
 	result := make([]exercise.Exercise, 0, limit)
 	if err := r.db.SelectContext(ctx, &result, q, userID, limit); err != nil {

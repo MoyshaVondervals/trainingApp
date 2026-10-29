@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { api } from "../api/client";
 import type { Exercise, Muscle, MuscleGroup } from "../api/types";
 import { MusclePicker, MuscleSummary } from "../components/MusclePicker";
@@ -10,12 +10,13 @@ export function Exercises() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const [form, setForm] = useState({ name: "", description: "" });
+  const [form, setForm] = useState({ name: "", description: "", link: "" });
   const [muscles, setMuscles] = useState<Muscle[]>([]);
   const [editing, setEditing] = useState<Exercise | null>(null);
   const [saving, setSaving] = useState(false);
 
   const [openMuscles, setOpenMuscles] = useState<number | null>(null);
+  const formRef = useRef<HTMLFormElement>(null);
   const [musclesByExercise, setMusclesByExercise] = useState<Record<number, Muscle[]>>({});
 
   const load = useCallback(async () => {
@@ -35,7 +36,7 @@ export function Exercises() {
 
   function resetForm() {
     setEditing(null);
-    setForm({ name: "", description: "" });
+    setForm({ name: "", description: "", link: "" });
     setMuscles([]);
   }
 
@@ -66,7 +67,10 @@ export function Exercises() {
 
   async function startEdit(ex: Exercise) {
     setEditing(ex);
-    setForm({ name: ex.name, description: ex.description ?? "" });
+    setForm({ name: ex.name, description: ex.description ?? "", link: ex.link ?? "" });
+    // Форма стоит вверху страницы, а кнопка «Править» — в списке ниже,
+    // поэтому без прокрутки выглядит так, будто нажатие ничего не сделало.
+    formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     try {
       const current = musclesByExercise[ex.id] ?? (await api.muscles(ex.id));
       setMusclesByExercise((prev) => ({ ...prev, [ex.id]: current }));
@@ -105,7 +109,7 @@ export function Exercises() {
       <div className="page-head"><h1>Упражнения</h1></div>
       <ErrorBox error={error} />
 
-      <form className="card" onSubmit={submit}>
+      <form className="card" onSubmit={submit} ref={formRef}>
         <h2>{editing ? `Правка «${editing.name}»` : "Новое личное упражнение"}</h2>
         <div className="field">
           <label htmlFor="name">Название</label>
@@ -116,6 +120,12 @@ export function Exercises() {
           <label htmlFor="descr">Описание</label>
           <textarea id="descr" rows={2} maxLength={1000} value={form.description}
                     onChange={(e) => setForm({ ...form, description: e.target.value })} />
+        </div>
+        <div className="field">
+          <label htmlFor="link">Ссылка на технику</label>
+          <input id="link" type="url" maxLength={500} value={form.link}
+                 placeholder="https://musclewiki.com/ru-ru/exercise/..."
+                 onChange={(e) => setForm({ ...form, link: e.target.value })} />
         </div>
         <div className="field">
           <label>Задействованные мышцы</label>
@@ -145,6 +155,14 @@ export function Exercises() {
                   </span>
                 </div>
                 {ex.description && <div className="small muted">{ex.description}</div>}
+              </div>
+              <div className="row" onClick={(e) => e.stopPropagation()}>
+                {ex.link && (
+                  <a className="link-btn" href={ex.link} target="_blank" rel="noopener noreferrer"
+                     title="Открыть описание техники">
+                    Посмотреть технику
+                  </a>
+                )}
               </div>
               {ex.user_id !== null && (
                 <div className="row" onClick={(e) => e.stopPropagation()}>

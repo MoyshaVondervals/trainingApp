@@ -69,9 +69,9 @@ export const api = {
 
   exercises: (limit = 100) => request<Exercise[]>("GET", `/api/v1/exercises?limit=${limit}`),
   exercise: (id: number) => request<Exercise>("GET", `/api/v1/exercises/${id}`),
-  createExercise: (b: { name: string; description?: string }) =>
+  createExercise: (b: { name: string; description?: string; link?: string }) =>
     request<Exercise>("POST", "/api/v1/exercises", b),
-  updateExercise: (id: number, b: { name: string; description?: string }) =>
+  updateExercise: (id: number, b: { name: string; description?: string; link?: string }) =>
     request<Exercise>("PATCH", `/api/v1/exercises/${id}`, b),
   deleteExercise: (id: number) => request<void>("DELETE", `/api/v1/exercises/${id}`),
   muscles: (id: number) => request<Muscle[]>("GET", `/api/v1/exercises/${id}/muscles`),

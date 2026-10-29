@@ -6,7 +6,9 @@ import type {
 } from "../api/types";
 import { MuscleSummary } from "../components/MusclePicker";
 import { Combobox } from "../components/Combobox";
-import { Empty, ErrorBox, fmtDate, fmtDuration, fmtNum, msg, parseDecimal, useNow } from "../components/ui";
+import {
+  Empty, ErrorBox, fmtDate, fmtDuration, fmtNum, fmtRest, msg, parseDecimal, useNow,
+} from "../components/ui";
 
 export function WorkoutDetail() {
   const { id } = useParams();
@@ -34,6 +36,8 @@ export function WorkoutDetail() {
   const [musclesError, setMusclesError] = useState<string | null>(null);
 
   const now = useNow(workout !== null && workout.ended_at === null);
+  // Таймер отдыха тикает ежесекундно, но только пока тренировка идёт и в ней есть подходы.
+  const restNow = useNow(workout !== null && workout.ended_at === null && sets.length > 0, 1000);
 
   const load = useCallback(async () => {
     try {
@@ -146,6 +150,11 @@ export function WorkoutDetail() {
     }
   }
 
+  const exerciseLink = useCallback(
+    (eid: number) => exercises.find((e) => e.id === eid)?.link ?? "",
+    [exercises],
+  );
+
   const exerciseName = useCallback(
     (eid: number) => exercises.find((e) => e.id === eid)?.name ?? `#${eid}`,
     [exercises],
@@ -165,6 +174,14 @@ export function WorkoutDetail() {
         lastAt: Math.max(...list.map((s) => new Date(s.created_at).getTime())),
       }))
       .sort((a, b) => b.lastAt - a.lastAt);
+  }, [sets]);
+
+  const lastSetAt = useMemo(() => {
+    if (sets.length === 0) return null;
+    return sets.reduce(
+      (latest, s) => (s.created_at > latest ? s.created_at : latest),
+      sets[0].created_at,
+    );
   }, [sets]);
 
   const volume = useMemo(
@@ -296,13 +313,28 @@ export function WorkoutDetail() {
             {fmtDuration(workout.started_at, workout.ended_at, now)}
           </div>
         </div>
+        {lastSetAt && workout.ended_at === null && (
+          <div className="card rest-card">
+            <div className="stat-label">Отдых</div>
+            <div className="stat-value rest-value">{fmtRest(lastSetAt, restNow)}</div>
+            <div className="small muted">с последнего подхода</div>
+          </div>
+        )}
       </div>
 
       {currentItem && (
         <div className="card plan-banner" style={{ marginTop: 14 }}>
           <div style={{ flex: 1, minWidth: 220 }}>
             <div className="stat-label">{plan?.name} · шаг {step! + 1} из {planItems.length}</div>
-            <div className="plan-step">{exerciseName(currentItem.exercise_id)}</div>
+            <div className="row" style={{ gap: 10 }}>
+              <div className="plan-step">{exerciseName(currentItem.exercise_id)}</div>
+              {exerciseLink(currentItem.exercise_id) && (
+                <a className="link-btn" href={exerciseLink(currentItem.exercise_id)}
+                   target="_blank" rel="noopener noreferrer" title="Открыть описание техники">
+                  Посмотреть технику
+                </a>
+              )}
+            </div>
             <div className="small muted">
               сделано {doneByExercise.get(currentItem.exercise_id) ?? 0} из {currentItem.target_sets}
               {" "}по {currentItem.target_reps} повторений
@@ -397,7 +429,15 @@ export function WorkoutDetail() {
       {groups.length === 0 && <Empty>Подходов ещё нет.</Empty>}
       {groups.map((g) => (
         <div className="card" key={g.exerciseId}>
-          <h2>{exerciseName(g.exerciseId)}</h2>
+          <div className="row between wrap" style={{ marginBottom: 12 }}>
+            <h2 style={{ margin: 0 }}>{exerciseName(g.exerciseId)}</h2>
+            {exerciseLink(g.exerciseId) && (
+              <a className="link-btn" href={exerciseLink(g.exerciseId)}
+                 target="_blank" rel="noopener noreferrer">
+                Посмотреть технику
+              </a>
+            )}
+          </div>
           <table>
             <thead>
               <tr><th>№</th><th>Повторы</th><th>Вес, кг</th><th>Объём</th><th></th></tr>

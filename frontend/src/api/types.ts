@@ -12,6 +12,7 @@ export type Exercise = {
   id: number;
   name: string;
   description: string;
+  link?: string;
   user_id: number | null;
   created_at: string;
 };

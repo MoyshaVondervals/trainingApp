@@ -53,3 +53,13 @@ export function useNow(active: boolean, intervalMs = 30_000): number {
   }, [active, intervalMs]);
   return now;
 }
+
+/** Время с последнего подхода: «1:23», «12:05», «1:04:30». */
+export function fmtRest(sinceIso: string, now = Date.now()): string {
+  const seconds = Math.max(0, Math.floor((now - new Date(sinceIso).getTime()) / 1000));
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = seconds % 60;
+  const mm = h > 0 ? String(m).padStart(2, "0") : String(m);
+  return h > 0 ? `${h}:${mm}:${String(s).padStart(2, "0")}` : `${mm}:${String(s).padStart(2, "0")}`;
+}

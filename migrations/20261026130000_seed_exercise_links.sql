@@ -1,0 +1,51 @@
+-- +goose Up
+UPDATE exercises e SET link = v.link
+FROM (VALUES
+    ('Жим штанги лёжа',                  'https://musclewiki.com/ru-ru/exercise/barbell-bench-press'),
+    ('Жим гантелей на наклонной скамье', 'https://musclewiki.com/ru-ru/exercise/dumbbell-incline-bench-press'),
+    ('Жим штанги на наклонной вниз',     'https://musclewiki.com/ru-ru/exercise/barbell-decline-bench-press'),
+    ('Отжимания на брусьях',             'https://musclewiki.com/ru-ru/exercise/parralel-bar-dips'),
+    ('Отжимания от пола',                'https://musclewiki.com/ru-ru/exercise/push-up'),
+    ('Сведение рук в кроссовере',        'https://musclewiki.com/ru-ru/exercise/cable-pec-fly'),
+    ('Подтягивания широким хватом',      'https://musclewiki.com/ru-ru/exercise/pull-ups'),
+    ('Тяга штанги в наклоне',            'https://musclewiki.com/ru-ru/exercise/barbell-bent-over-row'),
+    ('Тяга верхнего блока',              'https://musclewiki.com/ru-ru/exercise/machine-pulldown'),
+    ('Тяга горизонтального блока',       'https://musclewiki.com/ru-ru/exercise/machine-seated-cable-row'),
+    ('Становая тяга',                    'https://musclewiki.com/ru-ru/exercise/barbell-deadlift'),
+    ('Шраги со штангой',                 'https://musclewiki.com/ru-ru/exercise/barbell-shrug'),
+    ('Гиперэкстензия',                   'https://musclewiki.com/ru-ru/exercise/machine-45-degree-back-extension'),
+    ('Тяга гантели одной рукой',         'https://musclewiki.com/ru-ru/exercise/dumbbell-row-unilateral'),
+    ('Жим штанги стоя',                  'https://musclewiki.com/ru-ru/exercise/barbell-overhead-press'),
+    ('Жим гантелей сидя',                'https://musclewiki.com/ru-ru/exercise/dumbbell-seated-overhead-press'),
+    ('Махи гантелями в стороны',         'https://musclewiki.com/ru-ru/exercise/dumbbell-lateral-raise'),
+    ('Махи гантелями в наклоне',         'https://musclewiki.com/ru-ru/exercise/dumbbell-rear-delt-fly'),
+    ('Тяга штанги к подбородку',         'https://musclewiki.com/ru-ru/exercise/barbell-upright-row'),
+    ('Подъём штанги на бицепс',          'https://musclewiki.com/ru-ru/exercise/barbell-curl'),
+    ('Подъём гантелей «молот»',          'https://musclewiki.com/ru-ru/exercise/dumbbell-hammer-curl'),
+    ('Сгибание рук на скамье Скотта',    'https://musclewiki.com/ru-ru/exercise/dumbbell-preacher-curl'),
+    ('Французский жим лёжа',             'https://musclewiki.com/ru-ru/exercise/barbell-laying-triceps-extensions'),
+    ('Разгибание рук на блоке',          'https://musclewiki.com/ru-ru/exercise/cable-rope-pushdown'),
+    ('Сгибание запястий со штангой',     'https://musclewiki.com/ru-ru/exercise/barbell-wrist-curl'),
+    ('Разгибание запястий со штангой',   'https://musclewiki.com/ru-ru/exercise/barbell-wrist-extension'),
+    ('Скручивания лёжа',                 'https://musclewiki.com/ru-ru/exercise/crunches'),
+    ('Подъём ног в висе',                'https://musclewiki.com/ru-ru/exercise/hanging-knee-raises'),
+    ('Планка',                           'https://musclewiki.com/ru-ru/exercise/hand-plank'),
+    ('Боковая планка',                   'https://musclewiki.com/ru-ru/exercise/elbow-side-plank'),
+    ('Русский твист',                    'https://musclewiki.com/ru-ru/exercise/dumbbell-russian-twist'),
+    ('Приседания со штангой',            'https://musclewiki.com/ru-ru/exercise/barbell-squat'),
+    ('Жим ногами',                       'https://musclewiki.com/ru-ru/exercise/machine-leg-press'),
+    ('Выпады с гантелями',               'https://musclewiki.com/ru-ru/exercise/forward-lunges'),
+    ('Румынская тяга',                   'https://musclewiki.com/ru-ru/exercise/barbell-romanian-deadlift'),
+    ('Сгибание ног лёжа',                'https://musclewiki.com/ru-ru/exercise/machine-hamstring-curl'),
+    ('Разгибание ног сидя',              'https://musclewiki.com/ru-ru/exercise/machine-leg-extension'),
+    ('Подъём на носки стоя',             'https://musclewiki.com/ru-ru/exercise/machine-standing-calf-raises'),
+    ('Подъём на носки сидя',             'https://musclewiki.com/ru-ru/exercise/barbell-seated-calf-raise'),
+    ('Отведение бедра в тренажёре',      'https://musclewiki.com/ru-ru/exercise/machine-hip-abduction'),
+    ('Сведение ног в тренажёре',         'https://musclewiki.com/ru-ru/exercise/machine-hip-adduction'),
+    ('Сгибание шеи с отягощением',       'https://musclewiki.com/ru-ru/exercise/standing-neck-flexions'),
+    ('Разгибание шеи с отягощением',     'https://musclewiki.com/ru-ru/exercise/standing-neck-extensions')
+) AS v(name, link)
+WHERE e.name = v.name AND e.user_id IS NULL;
+
+-- +goose Down
+UPDATE exercises SET link = '' WHERE user_id IS NULL;

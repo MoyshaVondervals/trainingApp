@@ -83,7 +83,7 @@ func (r *ExerciseMusclesRepo) ListExercisesByGroup(ctx context.Context, userID i
 		return nil, fmt.Errorf("find muscle group: %w", err)
 	}
 
-	const q = `SELECT e.id, e.name, e.description, e.user_id, e.created_at, em.role
+	const q = `SELECT e.id, e.name, e.description, e.link, e.user_id, e.created_at, em.role
 FROM exercise_muscles em
 JOIN exercises e ON e.id = em.exercise_id
 WHERE em.muscle_group_id = $1 AND (e.user_id IS NULL OR e.user_id = $2)
