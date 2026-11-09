@@ -13,8 +13,11 @@ import (
 	"syscall"
 	"time"
 	"trainingApp/internal/api"
+	"trainingApp/internal/cache"
 	"trainingApp/internal/config"
 	"trainingApp/internal/postgres"
+
+	"github.com/redis/go-redis/v9"
 )
 
 func newLogger(level slog.Level, format string) *slog.Logger {
@@ -45,13 +48,25 @@ func run() error {
 		return err
 	}
 	defer db.Close()
+	redisClient := redis.NewClient(&redis.Options{Addr: cfg.RedisAddr})
+	defer redisClient.Close()
+
+	pingCtx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	if err := redisClient.Ping(pingCtx).Err(); err != nil {
+		logger.Warn("redis unavailable", "err", err)
+	} else {
+		logger.Info("redis connected successfully")
+	}
+
 	router := api.Router(
 		api.NewExerciseHandler(postgres.NewExerciseRepo(db)),
 		api.NewUserHandler(postgres.NewUserRepo(db), cfg.Secret(), cfg.JWTTTL),
 		api.NewWorkoutsHandler(postgres.NewWorkoutRepo(db)),
 		api.NewSetHandler(postgres.NewSetRepo(db)),
 		api.NewExerciseMuscleHandler(postgres.NewExerciseMusclesRepo(db)),
-		api.NewStatsHandler(postgres.NewStatsRepo(db)),
+		api.NewStatsHandler(postgres.NewStatsRepo(db), cache.NewDashboard(redisClient)),
 		api.NewWeightHandler(postgres.NewWeightRepo(db)),
 		api.NewPlanHandler(postgres.NewPlanRepo(db)),
 	)

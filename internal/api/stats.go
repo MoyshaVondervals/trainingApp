@@ -13,6 +13,12 @@ import (
 
 type StatsHandler struct {
 	stats StatsStore
+	cache DashboardCache
+}
+
+type DashboardCache interface {
+	Get(context.Context, int64, string, string) (stats.Dashboard, bool, error)
+	Set(context.Context, int64, string, string, stats.Dashboard) error
 }
 
 type StatsStore interface {
@@ -21,8 +27,8 @@ type StatsStore interface {
 	Summary(ctx context.Context, userID int64, p stats.Period) (stats.Summary, error)
 }
 
-func NewStatsHandler(store StatsStore) *StatsHandler {
-	return &StatsHandler{stats: store}
+func NewStatsHandler(store StatsStore, cache DashboardCache) *StatsHandler {
+	return &StatsHandler{stats: store, cache: cache}
 }
 
 func (h *StatsHandler) dashboard(w http.ResponseWriter, r *http.Request) {
@@ -46,6 +52,17 @@ func (h *StatsHandler) dashboard(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		writeError(w, http.StatusUnprocessableEntity, err.Error())
 		return
+	}
+	fromRaw := r.URL.Query().Get("from")
+	toRaw := r.URL.Query().Get("to")
+	if h.cache != nil {
+		cached, found, err := h.cache.Get(r.Context(), userID, fromRaw, toRaw)
+		if err != nil {
+			slog.Warn("read stats cache", "user_id", userID, "err", err)
+		} else if found {
+			writeJSON(w, http.StatusOK, cached)
+			return
+		}
 	}
 
 	var (
@@ -80,12 +97,18 @@ func (h *StatsHandler) dashboard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeJSON(w, http.StatusOK, stats.Dashboard{
+	result := stats.Dashboard{
 		Period:  period,
 		Summary: summary,
 		Muscles: stats.AggregateByGroup(muscles),
 		Records: records,
-	})
+	}
+	if h.cache != nil {
+		if err := h.cache.Set(r.Context(), userID, fromRaw, toRaw, result); err != nil {
+			slog.Warn("write stats cache", "user_id", userID, "err", err)
+		}
+	}
+	writeJSON(w, http.StatusOK, result)
 }
 
 func parseTimeQuery(r *http.Request, name string) (time.Time, error) {

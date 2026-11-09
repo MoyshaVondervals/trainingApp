@@ -223,19 +223,23 @@ export function Plans() {
           <Empty>Планов пока нет. Создайте первый, чтобы не держать порядок упражнений в голове.</Empty>
         )}
         {plans.map((p) => (
-          <div key={p.id}>
+          <div className="list-item" key={p.id}>
             <div className="list-row clickable" onClick={() => void toggle(p)}>
-              <div>
-                <strong>{p.name}</strong>
-                {p.note && <div className="small muted">{p.note}</div>}
+              <div className="row-main">
+                <div className="row-title">
+                  <span className="name">{p.name}</span>
+                </div>
+                {p.note && <span className="small muted ellipsis">{p.note}</span>}
               </div>
-              <div className="row" onClick={(e) => e.stopPropagation()}>
+              <div className="row-actions" onClick={(e) => e.stopPropagation()}>
                 <button className="btn-ghost btn-sm" onClick={() => void startEdit(p)}>Править</button>
-                <button className="btn-danger btn-sm" onClick={() => void remove(p.id)}>Удалить</button>
+                <button className="btn-danger btn-sm icon-btn" title="Удалить план"
+                        onClick={() => void remove(p.id)}>×</button>
               </div>
             </div>
             {openPlan === p.id && (
               <div className="card" style={{ marginTop: 8 }}>
+                {p.note && <div className="small muted" style={{ marginBottom: 10 }}>{p.note}</div>}
                 {expanded[p.id]
                   ? (expanded[p.id].exercises ?? []).map((i) => (
                       <div className="row between small" key={i.exercise_id} style={{ padding: "4px 0" }}>

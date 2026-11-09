@@ -30,7 +30,7 @@ func TestStatsHandlerDashboard(t *testing.T) {
 	}
 
 	rec := httptest.NewRecorder()
-	NewStatsHandler(store).dashboard(rec, authedRequest(http.MethodGet, "/api/v1/stats", "", 7))
+	NewStatsHandler(store, nil).dashboard(rec, authedRequest(http.MethodGet, "/api/v1/stats", "", 7))
 
 	if rec.Code != http.StatusOK {
 		t.Fatalf("статус = %d, ожидался 200, тело: %s", rec.Code, rec.Body)
@@ -87,7 +87,7 @@ func TestStatsHandlerPeriodValidation(t *testing.T) {
 			}
 
 			rec := httptest.NewRecorder()
-			NewStatsHandler(store).dashboard(rec, authedRequest(http.MethodGet, tt.target, "", 7))
+			NewStatsHandler(store, nil).dashboard(rec, authedRequest(http.MethodGet, tt.target, "", 7))
 
 			if rec.Code != tt.wantStatus {
 				t.Fatalf("статус = %d, ожидался %d, тело: %s", rec.Code, tt.wantStatus, rec.Body)
@@ -132,7 +132,7 @@ func TestStatsHandlerRunsQueriesConcurrently(t *testing.T) {
 
 	start := time.Now()
 	rec := httptest.NewRecorder()
-	NewStatsHandler(store).dashboard(rec, authedRequest(http.MethodGet, "/api/v1/stats", "", 7))
+	NewStatsHandler(store, nil).dashboard(rec, authedRequest(http.MethodGet, "/api/v1/stats", "", 7))
 	elapsed := time.Since(start)
 
 	if rec.Code != http.StatusOK {
@@ -159,12 +159,80 @@ func TestStatsHandlerFailsWholeDashboardOnQueryError(t *testing.T) {
 	}
 
 	rec := httptest.NewRecorder()
-	NewStatsHandler(store).dashboard(rec, authedRequest(http.MethodGet, "/api/v1/stats", "", 7))
+	NewStatsHandler(store, nil).dashboard(rec, authedRequest(http.MethodGet, "/api/v1/stats", "", 7))
 
 	if rec.Code != http.StatusInternalServerError {
 		t.Fatalf("статус = %d, ожидался 500: частичный дашборд отдавать нельзя", rec.Code)
 	}
 	if body := rec.Body.String(); !json.Valid(rec.Body.Bytes()) || body == "" {
 		t.Errorf("ожидался JSON с ошибкой, получено: %q", body)
+	}
+}
+
+type dashboardCacheStub struct {
+	get func(context.Context, int64, string, string) (stats.Dashboard, bool, error)
+	set func(context.Context, int64, string, string, stats.Dashboard) error
+}
+
+func (s dashboardCacheStub) Get(ctx context.Context, userID int64, from, to string) (stats.Dashboard, bool, error) {
+	return s.get(ctx, userID, from, to)
+}
+
+func (s dashboardCacheStub) Set(ctx context.Context, userID int64, from, to string, value stats.Dashboard) error {
+	return s.set(ctx, userID, from, to, value)
+}
+
+func TestStatsHandlerCacheHitSkipsDatabase(t *testing.T) {
+	const target = "/api/v1/stats?from=2026-08-01T00:00:00Z&to=2026-09-01T00:00:00Z"
+	cache := dashboardCacheStub{
+		get: func(_ context.Context, userID int64, from, to string) (stats.Dashboard, bool, error) {
+			if userID != 7 || from != "2026-08-01T00:00:00Z" || to != "2026-09-01T00:00:00Z" {
+				t.Fatalf("неверный ключ кэша: user=%d from=%q to=%q", userID, from, to)
+			}
+			return stats.Dashboard{Summary: stats.Summary{Workouts: 3}}, true, nil
+		},
+		set: func(context.Context, int64, string, string, stats.Dashboard) error {
+			t.Fatal("при попадании в кэш запись не нужна")
+			return nil
+		},
+	}
+	rec := httptest.NewRecorder()
+	NewStatsHandler(statsStoreStub{t: t}, cache).dashboard(rec, authedRequest(http.MethodGet, target, "", 7))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("статус = %d, тело: %s", rec.Code, rec.Body)
+	}
+	var got stats.Dashboard
+	if err := json.Unmarshal(rec.Body.Bytes(), &got); err != nil || got.Summary.Workouts != 3 {
+		t.Fatalf("ответ из кэша: %+v, ошибка: %v", got, err)
+	}
+}
+
+func TestStatsHandlerCacheMissStoresDashboard(t *testing.T) {
+	const target = "/api/v1/stats?from=2026-08-01T00:00:00Z&to=2026-09-01T00:00:00Z"
+	var saved stats.Dashboard
+	cache := dashboardCacheStub{
+		get: func(context.Context, int64, string, string) (stats.Dashboard, bool, error) {
+			return stats.Dashboard{}, false, nil
+		},
+		set: func(_ context.Context, userID int64, from, to string, value stats.Dashboard) error {
+			if userID != 7 || from != "2026-08-01T00:00:00Z" || to != "2026-09-01T00:00:00Z" {
+				t.Fatalf("неверный ключ записи: user=%d from=%q to=%q", userID, from, to)
+			}
+			saved = value
+			return nil
+		},
+	}
+	store := statsStoreStub{
+		t: t,
+		summaryFn: func(context.Context, int64, stats.Period) (stats.Summary, error) {
+			return stats.Summary{Workouts: 2}, nil
+		},
+		muscleFn:  func(context.Context, int64, stats.Period) ([]stats.GroupRoleLoad, error) { return nil, nil },
+		recordsFn: func(context.Context, int64, int) ([]stats.Record, error) { return nil, nil },
+	}
+	rec := httptest.NewRecorder()
+	NewStatsHandler(store, cache).dashboard(rec, authedRequest(http.MethodGet, target, "", 7))
+	if rec.Code != http.StatusOK || saved.Summary.Workouts != 2 {
+		t.Fatalf("статус = %d, сохранено: %+v, тело: %s", rec.Code, saved, rec.Body)
 	}
 }

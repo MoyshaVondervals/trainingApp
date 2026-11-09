@@ -1,4 +1,4 @@
-import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { api } from "../api/client";
 import type {
@@ -31,6 +31,7 @@ export function WorkoutDetail() {
   const [plan, setPlan] = useState<Plan | null>(null);
   const [step, setStep] = useState<number | null>(null);
   const [showPlan, setShowPlan] = useState(false);
+  const [showNote, setShowNote] = useState(false);
   const [openSet, setOpenSet] = useState<number | null>(null);
   const [musclesByExercise, setMusclesByExercise] = useState<Record<number, Muscle[]>>({});
   const [musclesError, setMusclesError] = useState<string | null>(null);
@@ -139,6 +140,20 @@ export function WorkoutDetail() {
     setExerciseId(currentItem.exercise_id);
     setReps(String(currentItem.target_reps));
   }, [currentItem]);
+
+  const touchStartX = useRef<number | null>(null);
+
+  function onTouchStart(e: React.TouchEvent) {
+    touchStartX.current = e.touches[0].clientX;
+  }
+
+  function onTouchEnd(e: React.TouchEvent) {
+    if (touchStartX.current === null || step === null) return;
+    const delta = e.changedTouches[0].clientX - touchStartX.current;
+    touchStartX.current = null;
+    if (Math.abs(delta) < 50) return;
+    goToStep(delta < 0 ? step + 1 : step - 1);
+  }
 
   function goToStep(next: number) {
     if (next < 0 || next >= planItems.length) return;
@@ -290,48 +305,55 @@ export function WorkoutDetail() {
 
       <ErrorBox error={error} />
 
-      <div className="grid cols-4">
-        <div className="card">
-          <div className="stat-label">Подходов</div>
-          <div className="stat-value">{sets.length}</div>
+      <div className="stat-strip">
+        <div className="stat-tile">
+          <span className="stat-label">Подходов</span>
+          <span className="stat-num">{sets.length}</span>
         </div>
-        <div className="card">
-          <div className="stat-label">Повторов</div>
-          <div className="stat-value">{sets.reduce((a, s) => a + s.reps, 0)}</div>
+        <div className="stat-tile">
+          <span className="stat-label">Повторов</span>
+          <span className="stat-num">{sets.reduce((a, s) => a + s.reps, 0)}</span>
         </div>
-        <div className="card">
-          <div className="stat-label">Объём, кг</div>
-          <div className="stat-value">{fmtNum(volume)}</div>
+        <div className="stat-tile">
+          <span className="stat-label">Объём</span>
+          <span className="stat-num">{fmtNum(volume)}</span>
         </div>
-        <div className="card">
-          <div className="stat-label">Упражнений</div>
-          <div className="stat-value">{groups.length}</div>
+        <div className="stat-tile">
+          <span className="stat-label">Упражнений</span>
+          <span className="stat-num">{groups.length}</span>
         </div>
-        <div className="card">
-          <div className="stat-label">Длительность</div>
-          <div className="stat-value" style={{ fontSize: 24 }}>
-            {fmtDuration(workout.started_at, workout.ended_at, now)}
-          </div>
+        <div className="stat-tile">
+          <span className="stat-label">Длительность</span>
+          <span className="stat-num">{fmtDuration(workout.started_at, workout.ended_at, now)}</span>
         </div>
         {lastSetAt && workout.ended_at === null && (
-          <div className="card rest-card">
-            <div className="stat-label">Отдых</div>
-            <div className="stat-value rest-value">{fmtRest(lastSetAt, restNow)}</div>
-            <div className="small muted">с последнего подхода</div>
+          <div className="stat-tile rest-tile">
+            <span className="stat-label">Отдых</span>
+            <span className="stat-num rest-value">{fmtRest(lastSetAt, restNow)}</span>
           </div>
         )}
       </div>
 
       {currentItem && (
-        <div className="card plan-banner" style={{ marginTop: 14 }}>
+        <div className="card plan-banner" style={{ marginTop: 14 }}
+             onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
           <div style={{ flex: 1, minWidth: 220 }}>
-            <div className="stat-label">{plan?.name} · шаг {step! + 1} из {planItems.length}</div>
+            <div className="row between">
+              <span className="stat-label">{plan?.name} · шаг {step! + 1} из {planItems.length}</span>
+              <span className="row-actions">
+                <button className="btn-ghost btn-sm icon-btn" title="Предыдущее упражнение"
+                        onClick={() => goToStep(step! - 1)} disabled={step === 0}>‹</button>
+                <button className="btn-teal btn-sm icon-btn" title="Следующее упражнение"
+                        onClick={() => goToStep(step! + 1)}
+                        disabled={step! >= planItems.length - 1}>›</button>
+              </span>
+            </div>
             <div className="row" style={{ gap: 10 }}>
               <div className="plan-step">{exerciseName(currentItem.exercise_id)}</div>
               {exerciseLink(currentItem.exercise_id) && (
                 <a className="link-btn" href={exerciseLink(currentItem.exercise_id)}
                    target="_blank" rel="noopener noreferrer" title="Открыть описание техники">
-                  Посмотреть технику
+                  Техника
                 </a>
               )}
             </div>
@@ -347,13 +369,10 @@ export function WorkoutDetail() {
             </div>
           </div>
           <div className="row wrap">
-            <button className="btn-ghost btn-sm" onClick={() => goToStep(step! - 1)}
-                    disabled={step === 0}>Назад</button>
-            <button className="btn-teal" onClick={() => goToStep(step! + 1)}
-                    disabled={step! >= planItems.length - 1}>Следующее упражнение</button>
             <button className="btn-ghost btn-sm" onClick={() => setShowPlan((v) => !v)}>
               {showPlan ? "Скрыть план" : "Посмотреть план"}
             </button>
+            <span className="small muted swipe-hint">свайп влево и вправо листает упражнения</span>
           </div>
           {showPlan && (
             <div className="plan-queue" style={{ width: "100%" }}>
@@ -417,15 +436,6 @@ export function WorkoutDetail() {
         )}
       </div>
 
-      <div className="card">
-        <h2>Заметка</h2>
-        <div className="row wrap">
-          <input value={noteDraft} maxLength={1000} onChange={(e) => setNoteDraft(e.target.value)}
-                 placeholder="Как прошло" style={{ flex: 1, minWidth: 220 }} />
-          <button className="btn-ghost" onClick={saveNote}>Сохранить</button>
-        </div>
-      </div>
-
       {groups.length === 0 && <Empty>Подходов ещё нет.</Empty>}
       {groups.map((g) => (
         <div className="card" key={g.exerciseId}>
@@ -434,7 +444,7 @@ export function WorkoutDetail() {
             {exerciseLink(g.exerciseId) && (
               <a className="link-btn" href={exerciseLink(g.exerciseId)}
                  target="_blank" rel="noopener noreferrer">
-                Посмотреть технику
+                Техника
               </a>
             )}
           </div>
@@ -474,6 +484,23 @@ export function WorkoutDetail() {
           </table>
         </div>
       ))}
+
+      <div className="card note-card">
+        <button className="note-toggle" onClick={() => setShowNote((v) => !v)}>
+          <span>Заметка</span>
+          <span className="small muted ellipsis">
+            {workout.note ? workout.note : "нет"}
+          </span>
+          <span className="note-chevron">{showNote ? "▴" : "▾"}</span>
+        </button>
+        {showNote && (
+          <div className="row wrap" style={{ marginTop: 10 }}>
+            <input value={noteDraft} maxLength={1000} onChange={(e) => setNoteDraft(e.target.value)}
+                   placeholder="Как прошло" style={{ flex: 1, minWidth: 180 }} />
+            <button className="btn-ghost" onClick={saveNote}>Сохранить</button>
+          </div>
+        )}
+      </div>
     </>
   );
 }

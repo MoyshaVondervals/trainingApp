@@ -100,25 +100,28 @@ export function Workouts() {
           <div className="list-row clickable" key={w.id} role="link" tabIndex={0}
                onClick={() => navigate(`/workouts/${w.id}`)}
                onKeyDown={(e) => { if (e.key === "Enter") navigate(`/workouts/${w.id}`); }}>
-            <div>
-              <div className="row" style={{ gap: 8 }}>
-                <span style={{ fontWeight: 600 }}>{fmtDate(w.started_at)}</span>
-                <span className={`badge ${w.ended_at ? "done" : "live"}`}>
-                  {w.ended_at ? "завершена" : "идёт"}
+            <div className="row-main">
+              <div className="row-title">
+                <span className={`dot ${w.ended_at ? "done" : "live"}`}
+                      title={w.ended_at ? "завершена" : "идёт"} />
+                <span className="name">{fmtDate(w.started_at)}</span>
+                <span className="small muted" style={{ flex: "none" }}>
+                  {fmtDuration(w.started_at, w.ended_at, now)}
                 </span>
-                <span className="small muted">{fmtDuration(w.started_at, w.ended_at, now)}</span>
                 {w.plan_id !== null && (
-                  <span className="small muted">
-                    · {plans.find((p) => p.id === w.plan_id)?.name ?? "по плану"}
+                  <span className="badge own" style={{ flex: "none" }}>
+                    {plans.find((p) => p.id === w.plan_id)?.name ?? "план"}
                   </span>
                 )}
               </div>
-              <div className="small muted">{w.note || "без заметки"}</div>
+              <span className="small muted ellipsis">{w.note || "без заметки"}</span>
             </div>
-                        <button className="btn-danger btn-sm"
-                    onClick={(e) => { e.stopPropagation(); void remove(w.id); }}>
-              Удалить
-            </button>
+            <div className="row-actions">
+              <button className="btn-danger btn-sm icon-btn" title="Удалить тренировку"
+                      onClick={(e) => { e.stopPropagation(); void remove(w.id); }}>
+                ×
+              </button>
+            </div>
           </div>
         ))}
       </div>

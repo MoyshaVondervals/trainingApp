@@ -11,6 +11,10 @@ services:
   frontend:
     ports: !reset []
 
+  redis:
+    ports: !reset []
+
+
   caddy:
     image: caddy:2-alpine
     ports:

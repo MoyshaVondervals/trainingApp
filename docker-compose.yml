@@ -18,6 +18,12 @@ services:
       retries: 10
     restart: unless-stopped
 
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    ports: ["127.0.0.1:6379:6379"]
+    restart: unless-stopped
+
   migrate:
     build:
       context: .
@@ -35,6 +41,7 @@ services:
       target: api
     env_file: [.env]
     environment:
+      REDIS_ADDR: redis:6379
       DATABASE_URL: *db-dsn
     depends_on:
       postgres:

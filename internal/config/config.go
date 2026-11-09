@@ -25,6 +25,7 @@ type Config struct {
 	JWTTTL            time.Duration `env:"JWT_TTL" env-default:"30m"`
 	LogLevel          string        `env:"LOG_LEVEL" env-default:"info"`
 	LogFormat         string        `env:"LOG_FORMAT" env-default:"text"`
+	RedisAddr         string        `env:"REDIS_ADDR" env-default:"localhost:6379"`
 }
 
 func Load() (Config, error) {

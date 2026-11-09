@@ -145,37 +145,41 @@ export function Exercises() {
         {loading && <Empty>Загрузка…</Empty>}
         {!loading && items.length === 0 && <Empty>Каталог пуст.</Empty>}
         {items.map((ex) => (
-          <div key={ex.id}>
+          <div className="list-item" key={ex.id}>
             <div className="list-row clickable" onClick={() => void toggleMuscles(ex)}>
-              <div>
-                <div className="row" style={{ gap: 8 }}>
-                  <strong>{ex.name}</strong>
-                  <span className={`badge ${ex.user_id === null ? "sys" : "own"}`}>
-                    {ex.user_id === null ? "системное" : "личное"}
-                  </span>
+              <div className="row-main">
+                <div className="row-title">
+                  <span className={`dot ${ex.user_id === null ? "sys" : "own"}`}
+                        title={ex.user_id === null ? "системное" : "личное"} />
+                  <span className="name">{ex.name}</span>
                 </div>
-                {ex.description && <div className="small muted">{ex.description}</div>}
+                {ex.description && (
+                  <span className="small muted ellipsis">{ex.description}</span>
+                )}
               </div>
-              <div className="row" onClick={(e) => e.stopPropagation()}>
+              <div className="row-actions" onClick={(e) => e.stopPropagation()}>
                 {ex.link && (
                   <a className="link-btn" href={ex.link} target="_blank" rel="noopener noreferrer"
                      title="Открыть описание техники">
-                    Посмотреть технику
+                    Техника
                   </a>
                 )}
               </div>
-              {ex.user_id !== null && (
-                <div className="row" onClick={(e) => e.stopPropagation()}>
-                  <button className="btn-ghost btn-sm" onClick={() => void startEdit(ex)}>Править</button>
-                  <button className="btn-danger btn-sm" onClick={() => void remove(ex.id)}>Удалить</button>
-                </div>
-              )}
             </div>
             {openMuscles === ex.id && (
               <div className="card" style={{ marginTop: 8 }}>
                 {musclesByExercise[ex.id]
                   ? <MuscleSummary catalog={catalog} muscles={musclesByExercise[ex.id]} />
                   : <div className="small muted">Загрузка мышц…</div>}
+                {ex.description && (
+                  <div className="small muted" style={{ marginTop: 10 }}>{ex.description}</div>
+                )}
+                {ex.user_id !== null && (
+                  <div className="row" style={{ marginTop: 12 }}>
+                    <button className="btn-ghost btn-sm" onClick={() => void startEdit(ex)}>Править</button>
+                    <button className="btn-danger btn-sm" onClick={() => void remove(ex.id)}>Удалить</button>
+                  </div>
+                )}
               </div>
             )}
           </div>
